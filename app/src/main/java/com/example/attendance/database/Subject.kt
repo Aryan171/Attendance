@@ -2,7 +2,7 @@ package com.example.attendance.database
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.util.Date
+import java.time.LocalDate
 import java.util.SortedMap
 
 @Entity(tableName = "subject")
@@ -12,5 +12,5 @@ data class Subject(
     val subjectName: String,
     val presentDays: Int,
     val absentDays: Int,
-    val calendar: SortedMap<Date, Boolean>
+    val attendance: SortedMap<LocalDate, Boolean>
 )

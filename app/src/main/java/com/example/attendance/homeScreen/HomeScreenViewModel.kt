@@ -7,6 +7,7 @@ import com.example.attendance.database.Subject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 class HomeScreenViewModel: ViewModel() {
     private val dao = MainActivity.db.subjectDao()
@@ -14,9 +15,27 @@ class HomeScreenViewModel: ViewModel() {
     private val _subjectList = MutableStateFlow(emptyList<Subject>())
     val subjectList = _subjectList
 
+    fun markPresent(subject: Subject, date: LocalDate) {
+        subject.attendance[date] = true
+        updateSubject(subject)
+    }
+
+    fun markAbsent(subject: Subject, date: LocalDate) {
+        subject.attendance[date] = false
+        updateSubject(subject)
+    }
+
     fun addSubject(subject: Subject) {
         viewModelScope.launch(Dispatchers.IO) {
             dao.insert(subject)
+        }.invokeOnCompletion {
+            reloadSubjectList()
+        }
+    }
+
+    fun updateSubject(subject: Subject) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.update(subject)
         }.invokeOnCompletion {
             reloadSubjectList()
         }

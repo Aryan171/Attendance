@@ -30,7 +30,6 @@ class MainActivity : ComponentActivity() {
             SubjectDatabase::class.java,
             "subject_database"
         ).build()
-        println("Db made")
 
         setContent {
             val navController = rememberNavController()
