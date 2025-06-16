@@ -1,5 +1,6 @@
 package com.example.attendance.homeScreen
 
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import kotlinx.serialization.Serializable
@@ -8,8 +9,8 @@ import kotlinx.serialization.Serializable
 object HomeScreen
 
 @Composable
-fun homeScreen(
+fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
-
+    Text("haha")
 }
