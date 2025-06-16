@@ -11,6 +11,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.rememberNavController
 import com.example.attendance.ui.theme.AttendanceTheme
 
 class MainActivity : ComponentActivity() {
@@ -18,22 +20,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val navController = rememberNavController()
+
             AttendanceTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
+                    NavHost(
+                        navController = navController,
+                        startDestination =
                     )
                 }
             }
         }
     }
-}
-
-@Composable
-fun Greeting(
-    modifier: Modifier = Modifier,
-    name: String
-) {
-    Text(name, modifier = modifier)
 }
