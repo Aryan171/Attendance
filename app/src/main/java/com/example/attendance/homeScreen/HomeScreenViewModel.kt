@@ -11,8 +11,8 @@ import kotlinx.coroutines.launch
 class HomeScreenViewModel: ViewModel() {
     private val dao = MainActivity.db.subjectDao()
 
-    private val _subjectList = MutableStateFlow<List<Subject>>(emptyList())
-    var subjectList = _subjectList
+    private val _subjectList = MutableStateFlow(emptyList<Subject>())
+    val subjectList = _subjectList
 
     fun addSubject(subject: Subject) {
         viewModelScope.launch(Dispatchers.IO) {
