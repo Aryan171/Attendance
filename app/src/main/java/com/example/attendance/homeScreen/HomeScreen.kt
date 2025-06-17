@@ -11,44 +11,45 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.twotone.Close
 import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Done
 import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarColors
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.attendance.database.Subject
-import kotlinx.serialization.Serializable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.blur
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.example.attendance.MainActivity
+import com.example.attendance.database.Subject
+import kotlinx.serialization.Serializable
 import java.time.LocalDate
 
 @Serializable
@@ -58,43 +59,115 @@ object HomeScreen
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    viewModel: HomeScreenViewModel = viewModel(),
+    viewModel: HomeScreenViewModel = HomeScreenViewModel(MainActivity.db.subjectDao()),
     subjectCardOnClick: (subject: Subject) -> Unit = {},
 ) {
-    val subjectList: List<Subject> by viewModel.subjectList.collectAsState()
+    val subjectList = viewModel.subjectList
 
     Scaffold(
         containerColor = Color.White,
-        topBar = {HomeScreenTopBar()}
+        topBar = {HomeScreenTopBar(viewModel)}
     ) {
         LazyColumn(
             modifier = Modifier
                 .padding(it),
             contentPadding = PaddingValues(10.dp)
         ) {
-            item {
+            items (
+                items = subjectList,
+                key = {it.id}
+            ){
                 SubjectCard(
-                    Subject(
-                        subjectName = "Subject name",
-                        presentDays = 20,
-                        absentDays = 3,
-                        attendance = sortedMapOf<LocalDate, Boolean>(LocalDate.now() to true)
-                    ),
+                    subject = it,
                     viewModel = viewModel,
                     onClick = subjectCardOnClick
                 )
-            }
-
-            items(count = subjectList.size) {
-                SubjectCard(subjectList[it], viewModel, subjectCardOnClick)
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreenTopBar() {
+fun HomeScreenTopBar(
+    viewModel: HomeScreenViewModel
+) {
+    var showAddPopup by remember {mutableStateOf(false)}
+    var text by remember {mutableStateOf("")}
 
+    if (showAddPopup) {
+        Popup(
+            alignment = Alignment.Center,
+            offset = IntOffset(0, 0),
+            onDismissRequest = {text = ""
+                showAddPopup = false },
+            properties = PopupProperties(focusable = true)
+        ) {
+            Row {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = {
+                        if (it.endsWith('\n')) {
+                            if (it == "\n") {
+                                text = ""
+                            }
+                            else {
+                                viewModel.addSubject(Subject(subjectName = text.trim()))
+                                text = ""
+                                showAddPopup = false
+                            }
+                        }
+                        else {
+                            text = it
+                        }
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    label = {
+                        Text("Subject Name")
+                    },
+                    trailingIcon = {
+                        IconButton(
+                            onClick = {
+                                viewModel.addSubject(Subject(subjectName = text.trim()))
+                                text = ""
+                                showAddPopup = false
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "add subject",
+                                tint = Color.Black
+                            )
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    TopAppBar(
+        title = {
+            Text("Attendance", maxLines = 1, overflow = TextOverflow.Ellipsis)
+        },
+        actions = {
+            // add button
+            IconButton(onClick = {
+                showAddPopup = true
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "add subject"
+                )
+            }
+        },
+        colors = TopAppBarColors(
+            containerColor = Color(89, 89, 89, 255),
+            scrolledContainerColor = Color.Black,
+            navigationIconContentColor = Color.White,
+            titleContentColor = Color.White,
+            actionIconContentColor = Color.White
+        )
+    )
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -104,7 +177,7 @@ fun SubjectCard(
     viewModel: HomeScreenViewModel,
     onClick: (subject: Subject) -> Unit
 ) {
-    var showPopup by remember { mutableStateOf(true) }
+    var showPopup by remember { mutableStateOf(false) }
     var rowHeight by remember { mutableIntStateOf(0) }
 
     val currentDate = LocalDate.now()
@@ -135,7 +208,7 @@ fun SubjectCard(
             .background(backGroundColor)
             .padding(5.dp)
             .combinedClickable(
-                onClick = {onClick(subject)},
+                onClick = { onClick(subject) },
                 onLongClick = {
                     showPopup = true
                 }
@@ -173,6 +246,7 @@ fun SubjectCard(
                     SubjectCardPopupButton(
                         onClick = {
                             viewModel.resetAttendance(subject)
+                            showPopup = false
                         },
                         text = "Reset"
                     ) {
@@ -187,6 +261,7 @@ fun SubjectCard(
                     SubjectCardPopupButton(
                         onClick = {
                             viewModel.deleteSubject(subject)
+                            showPopup = false
                         },
                         text = "Delete"
                     ) {
@@ -250,10 +325,15 @@ fun SubjectCard(
             Box(
                 contentAlignment = Alignment.Center,
             ) {
+                val totalDays = (subject.presentDays + subject.absentDays).toFloat()
+
                 CircularProgressIndicator(
                 progress = {
-                    subject.presentDays.toFloat() /
-                                            (subject.presentDays + subject.absentDays).toFloat()
+                    if (totalDays != 0f) {
+                        subject.presentDays.toFloat() / totalDays
+                    } else {
+                        1f
+                    }
                 },
                 modifier = Modifier,
                 color = Color(255, 132, 0, 255),
@@ -263,8 +343,13 @@ fun SubjectCard(
                 )
 
                 Text(
-                    text = "${((subject.presentDays.toFloat() * 100.0f)/ 
-                            ((subject.presentDays + subject.absentDays).toFloat())).toInt()}%",
+                    text = "${
+                        if (totalDays != 0f) {
+                            ((subject.presentDays.toFloat() * 100.0f) / totalDays).toInt()
+                        } else {
+                            100
+                        }
+                    }%",
                     color = Color.Black
                 )
             }

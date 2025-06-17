@@ -1,67 +1,122 @@
 package com.example.attendance.homeScreen
 
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.attendance.MainActivity
 import com.example.attendance.database.Subject
+import com.example.attendance.database.SubjectDao
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
-class HomeScreenViewModel: ViewModel() {
-    private val dao = MainActivity.db.subjectDao()
+class HomeScreenViewModel(
+    private val dao: SubjectDao
+): ViewModel() {
+    init {
+        reloadSubjectList()
+    }
 
-    private val _subjectList = MutableStateFlow(emptyList<Subject>())
+    private val _subjectList = mutableStateListOf<Subject>()
     val subjectList = _subjectList
 
     fun resetAttendance(subject: Subject) {
-        subject.attendance.clear()
-        updateSubject(subject)
+        updateSubject(subject.copy(
+            presentDays = 0,
+            absentDays = 0,
+            attendance = mutableMapOf<LocalDate, Boolean>()
+        ))
     }
 
     fun markPresent(subject: Subject, date: LocalDate) {
-        subject.attendance[date] = true
-        updateSubject(subject)
+        var updatedPresentDays = subject.presentDays
+        var updatedAbsentDays = subject.absentDays
+        var updatedAttendance = subject.attendance//.toMutableMap()
+
+        if (subject.attendance[date] == false) {
+            updatedPresentDays++
+            updatedAbsentDays--
+        }
+        else if (subject.attendance[date] == null){
+            updatedPresentDays++
+        }
+        updatedAttendance[date] = true
+        updateSubject(subject.copy(
+            presentDays = updatedPresentDays,
+            absentDays = updatedAbsentDays,
+            attendance = updatedAttendance
+        ))
     }
 
     fun clearAttendance(subject: Subject, date: LocalDate) {
-        subject.attendance.remove(date)
-        updateSubject(subject)
+        var updatedPresentDays = subject.presentDays
+        var updatedAbsentDays = subject.absentDays
+        var updatedAttendance = subject.attendance//.toMutableMap()
+
+        if (updatedAttendance[date] == true) {
+            updatedPresentDays--
+        }
+        else if (updatedAttendance[date] == false) {
+            updatedAbsentDays--
+        }
+        updatedAttendance.remove(date)
+        updateSubject(subject.copy(
+            presentDays = updatedPresentDays,
+            absentDays = updatedAbsentDays,
+            attendance = updatedAttendance
+        ))
     }
 
     fun markAbsent(subject: Subject, date: LocalDate) {
-        subject.attendance[date] = false
-        updateSubject(subject)
+        var updatedPresentDays = subject.presentDays
+        var updatedAbsentDays = subject.absentDays
+        var updatedAttendance = subject.attendance//.toMutableMap()
+
+        if (updatedAttendance[date] == true) {
+            updatedAbsentDays++
+            updatedPresentDays--
+        }
+        else if (updatedAttendance[date] == null){
+            updatedAbsentDays++
+        }
+        updatedAttendance[date] = false
+        updateSubject(subject.copy(
+            presentDays = updatedPresentDays,
+            absentDays = updatedAbsentDays,
+            attendance = updatedAttendance
+        ))
     }
 
     fun addSubject(subject: Subject) {
         viewModelScope.launch(Dispatchers.IO) {
             dao.insert(subject)
-        }.invokeOnCompletion {
-            reloadSubjectList()
         }
+        _subjectList.add(subject)
     }
 
     fun updateSubject(subject: Subject) {
         viewModelScope.launch(Dispatchers.IO) {
             dao.update(subject)
-        }.invokeOnCompletion {
-            reloadSubjectList()
+        }
+        val index = _subjectList.indexOfFirst { it.id == subject.id }
+
+        if (index != -1) {
+            _subjectList[index] = subject
         }
     }
 
     fun deleteSubject(subject: Subject) {
         viewModelScope.launch(Dispatchers.IO) {
             dao.delete(subject)
-        }.invokeOnCompletion {
-            reloadSubjectList()
+        }
+        _subjectList.removeIf {
+            it.id == subject.id
         }
     }
 
     fun reloadSubjectList() {
         viewModelScope.launch(Dispatchers.IO) {
-            _subjectList.value = dao.getAllSubjects()
+            _subjectList.clear()
+            _subjectList.addAll(dao.getAllSubjects())
         }
     }
 }
