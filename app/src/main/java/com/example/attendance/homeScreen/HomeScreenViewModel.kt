@@ -15,8 +15,18 @@ class HomeScreenViewModel: ViewModel() {
     private val _subjectList = MutableStateFlow(emptyList<Subject>())
     val subjectList = _subjectList
 
+    fun resetAttendance(subject: Subject) {
+        subject.attendance.clear()
+        updateSubject(subject)
+    }
+
     fun markPresent(subject: Subject, date: LocalDate) {
         subject.attendance[date] = true
+        updateSubject(subject)
+    }
+
+    fun clearAttendance(subject: Subject, date: LocalDate) {
+        subject.attendance.remove(date)
         updateSubject(subject)
     }
 
