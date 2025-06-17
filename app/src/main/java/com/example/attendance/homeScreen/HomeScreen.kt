@@ -7,13 +7,14 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.twotone.Close
@@ -25,6 +26,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -41,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
@@ -70,8 +73,7 @@ fun HomeScreen(
     ) {
         LazyColumn(
             modifier = Modifier
-                .padding(it),
-            contentPadding = PaddingValues(10.dp)
+                .padding(it)
         ) {
             items (
                 items = subjectList,
@@ -98,28 +100,38 @@ fun HomeScreenTopBar(
     if (showAddPopup) {
         Popup(
             alignment = Alignment.Center,
-            offset = IntOffset(0, 0),
             onDismissRequest = {text = ""
                 showAddPopup = false },
             properties = PopupProperties(focusable = true)
         ) {
-            Row {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .background(Color.White)
+            ) {
                 OutlinedTextField(
+                    colors = OutlinedTextFieldDefaults.colors().copy(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color(82, 82, 82, 255)
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp),
                     value = text,
-                    onValueChange = {
-                        if (it.endsWith('\n')) {
-                            if (it == "\n") {
-                                text = ""
-                            }
-                            else {
+                    keyboardActions = KeyboardActions(
+                        onGo = {
+                            if (text != "") {
                                 viewModel.addSubject(Subject(subjectName = text.trim()))
                                 text = ""
                                 showAddPopup = false
                             }
                         }
-                        else {
-                            text = it
-                        }
+                    ),
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Go
+                    ),
+                    onValueChange = {
+                        text = it
                     },
                     shape = RoundedCornerShape(10.dp),
                     label = {
@@ -128,9 +140,11 @@ fun HomeScreenTopBar(
                     trailingIcon = {
                         IconButton(
                             onClick = {
-                                viewModel.addSubject(Subject(subjectName = text.trim()))
-                                text = ""
-                                showAddPopup = false
+                                if (text != "") {
+                                    viewModel.addSubject(Subject(subjectName = text.trim()))
+                                    text = ""
+                                    showAddPopup = false
+                                }
                             }
                         ) {
                             Icon(
@@ -198,12 +212,13 @@ fun SubjectCard(
             }
         }
         else {
-            Color.White
+            Color(236, 236, 236, 255)
         }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(top = 10.dp, start = 10.dp, end = 10.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(backGroundColor)
             .padding(5.dp)
