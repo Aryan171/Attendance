@@ -1,5 +1,8 @@
 package com.example.attendance.homeScreen
 
+import android.graphics.RenderEffect
+import android.graphics.Shader
+import android.os.Build
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,31 +42,32 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.example.attendance.MainActivity
 import com.example.attendance.database.Subject
+import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.serialization.Serializable
 import java.time.LocalDate
 
 @Serializable
 object HomeScreen
 
-@Preview
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    viewModel: HomeScreenViewModel = HomeScreenViewModel(MainActivity.db.subjectDao()),
-    subjectCardOnClick: (subject: Subject) -> Unit = {},
+    viewModel: AttendanceViewModel,
+    subjectCardOnClick: (subject: Subject) -> Unit
 ) {
     val subjectList = viewModel.subjectList
 
@@ -92,7 +96,7 @@ fun HomeScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreenTopBar(
-    viewModel: HomeScreenViewModel
+    viewModel: AttendanceViewModel
 ) {
     var showAddPopup by remember {mutableStateOf(false)}
     var text by remember {mutableStateOf("")}
@@ -104,59 +108,57 @@ fun HomeScreenTopBar(
                 showAddPopup = false },
             properties = PopupProperties(focusable = true)
         ) {
-            Box(
-                contentAlignment = Alignment.Center,
+            OutlinedTextField(
+                colors = OutlinedTextFieldDefaults.colors().copy(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                ),
                 modifier = Modifier
-                    .background(Color.White)
-            ) {
-                OutlinedTextField(
-                    colors = OutlinedTextFieldDefaults.colors().copy(
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color(82, 82, 82, 255)
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp),
-                    value = text,
-                    keyboardActions = KeyboardActions(
-                        onGo = {
+                    .fillMaxWidth()
+                    .padding(10.dp)
+                    .padding(vertical = 40.dp),
+                value = text,
+                keyboardActions = KeyboardActions(
+                    onGo = {
+                        if (text != "") {
+                            viewModel.addSubject(Subject(subjectName = text.trim()))
+                            text = ""
+                            showAddPopup = false
+                        }
+                    }
+                ),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Go
+                ),
+                onValueChange = {
+                    text = it
+                },
+                shape = RoundedCornerShape(10.dp),
+                label = {
+                    Text("Subject Name")
+                },
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
                             if (text != "") {
                                 viewModel.addSubject(Subject(subjectName = text.trim()))
                                 text = ""
                                 showAddPopup = false
                             }
                         }
-                    ),
-                    keyboardOptions = KeyboardOptions.Default.copy(
-                        imeAction = ImeAction.Go
-                    ),
-                    onValueChange = {
-                        text = it
-                    },
-                    shape = RoundedCornerShape(10.dp),
-                    label = {
-                        Text("Subject Name")
-                    },
-                    trailingIcon = {
-                        IconButton(
-                            onClick = {
-                                if (text != "") {
-                                    viewModel.addSubject(Subject(subjectName = text.trim()))
-                                    text = ""
-                                    showAddPopup = false
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "add subject",
-                                tint = Color.Black
-                            )
-                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "add subject",
+                            tint = Color.Black
+                        )
                     }
-                )
-            }
+                }
+            )
         }
+
     }
 
     TopAppBar(
@@ -188,7 +190,7 @@ fun HomeScreenTopBar(
 @Composable
 fun SubjectCard(
     subject: Subject,
-    viewModel: HomeScreenViewModel,
+    viewModel: AttendanceViewModel,
     onClick: (subject: Subject) -> Unit
 ) {
     var showPopup by remember { mutableStateOf(false) }

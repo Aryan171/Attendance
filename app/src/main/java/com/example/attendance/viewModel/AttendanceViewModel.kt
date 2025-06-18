@@ -1,9 +1,12 @@
-package com.example.attendance.homeScreen
+package com.example.attendance.viewModel
 
-import androidx.compose.animation.core.copy
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.attendance.MainActivity
 import com.example.attendance.database.Subject
 import com.example.attendance.database.SubjectDao
 import kotlinx.coroutines.Dispatchers
@@ -11,11 +14,22 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
-class HomeScreenViewModel(
+class AttendanceViewModel(
     private val dao: SubjectDao
 ): ViewModel() {
     init {
         reloadSubjectList()
+    }
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val dao = MainActivity.db.subjectDao()
+                AttendanceViewModel(
+                    dao = dao
+                )
+            }
+        }
     }
 
     private val _subjectList = mutableStateListOf<Subject>()

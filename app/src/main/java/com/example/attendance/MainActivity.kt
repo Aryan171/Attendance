@@ -4,17 +4,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.ui.Modifier
+import androidx.activity.viewModels
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import androidx.room.Room
 import com.example.attendance.database.SubjectDatabase
 import com.example.attendance.homeScreen.HomeScreen
+import com.example.attendance.subjectDetailScreen.SubjectDetailScreen
 import com.example.attendance.ui.theme.AttendanceTheme
+import com.example.attendance.viewModel.AttendanceViewModel
 
 class MainActivity : ComponentActivity() {
     companion object {
@@ -33,18 +33,36 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val navController = rememberNavController()
+            val viewModelFactory = AttendanceViewModel.Factory
+            val viewModel by viewModels<AttendanceViewModel>{viewModelFactory}
 
             AttendanceTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    NavHost(
-                        navController = navController,
-                        startDestination = HomeScreen,
-                    ) {
-                        composable<HomeScreen> {
-                            HomeScreen(
-                                modifier = Modifier.padding(innerPadding)
-                            )
-                        }
+                NavHost(
+                    navController = navController,
+                    startDestination = HomeScreen,
+                ) {
+                    composable<HomeScreen> {
+                        HomeScreen(
+                            viewModel = viewModel,
+                            subjectCardOnClick = { subject->
+                                navController.navigate(
+                                    SubjectDetailScreen(
+                                        subjectIndex = viewModel.subjectList.indexOfFirst {
+                                            it.id == subject.id
+                                        }
+                                    )
+                                )
+                            }
+                        )
+                    }
+
+                    composable<SubjectDetailScreen> {
+                        val subjectDetailScreen: SubjectDetailScreen = it.toRoute()
+
+                        SubjectDetailScreen(
+                            subject = viewModel.subjectList[subjectDetailScreen.subjectIndex],
+                            viewModel = viewModel
+                        )
                     }
                 }
             }
