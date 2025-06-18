@@ -8,7 +8,7 @@ import java.time.LocalDate
 data class Subject(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val subjectName: String,
+    val name: String,
     val presentDays: Int = 0,
     val absentDays: Int = 0,
     val attendance: MutableMap<LocalDate, Boolean> = mutableMapOf<LocalDate, Boolean>()
