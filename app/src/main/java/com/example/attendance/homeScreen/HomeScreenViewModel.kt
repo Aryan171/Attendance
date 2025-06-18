@@ -1,5 +1,6 @@
 package com.example.attendance.homeScreen
 
+import androidx.compose.animation.core.copy
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,6 +8,7 @@ import com.example.attendance.database.Subject
 import com.example.attendance.database.SubjectDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
 class HomeScreenViewModel(
@@ -87,10 +89,12 @@ class HomeScreenViewModel(
     }
 
     fun addSubject(subject: Subject) {
-        viewModelScope.launch(Dispatchers.IO) {
-            dao.insert(subject)
+        viewModelScope.launch {
+            val generatedId = withContext(Dispatchers.IO) {
+                dao.insertSubjectAndGetId(subject)
+            }
+            _subjectList.add(subject.copy(id = generatedId) )
         }
-        _subjectList.add(subject)
     }
 
     fun updateSubject(subject: Subject) {

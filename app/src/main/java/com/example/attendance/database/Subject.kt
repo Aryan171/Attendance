@@ -7,9 +7,9 @@ import java.time.LocalDate
 @Entity(tableName = "subject")
 data class Subject(
     @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-    var subjectName: String,
-    var presentDays: Int = 0,
-    var absentDays: Int = 0,
-    var attendance: MutableMap<LocalDate, Boolean> = mutableMapOf<LocalDate, Boolean>()
+    val id: Long = 0,
+    val subjectName: String,
+    val presentDays: Int = 0,
+    val absentDays: Int = 0,
+    val attendance: MutableMap<LocalDate, Boolean> = mutableMapOf<LocalDate, Boolean>()
 )
