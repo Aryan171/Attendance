@@ -61,7 +61,14 @@ class MainActivity : ComponentActivity() {
 
                         SubjectDetailScreen(
                             subject = viewModel.subjectList[subjectDetailScreen.subjectIndex],
-                            viewModel = viewModel
+                            viewModel = viewModel,
+                            onBackPress = {
+                                navController.navigate(HomeScreen) {
+                                    popUpTo(HomeScreen) {
+                                        inclusive = true
+                                    }
+                                }
+                            }
                         )
                     }
                 }

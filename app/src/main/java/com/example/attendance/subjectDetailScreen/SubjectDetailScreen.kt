@@ -1,18 +1,26 @@
 package com.example.attendance.subjectDetailScreen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.twotone.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,27 +30,26 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.util.VelocityTracker
-import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.attendance.MainActivity
 import com.example.attendance.database.Subject
 import com.example.attendance.viewModel.AttendanceViewModel
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.Month
-import kotlin.math.abs
 
 @Serializable
 data class SubjectDetailScreen(
@@ -51,71 +58,200 @@ data class SubjectDetailScreen(
 
 @Composable
 fun SubjectDetailScreen(
-    subject: Subject = Subject(0, "Subject", 2, 3, mutableMapOf(LocalDate.now() to true)),
-    viewModel: AttendanceViewModel = AttendanceViewModel(MainActivity.db.subjectDao()),
-    onBackPress: () -> Unit = {}
+    subject: Subject,
+    viewModel: AttendanceViewModel,
+    onBackPress: () -> Unit
 ) {
+    var monthYear by remember {
+        mutableStateOf(LocalDate.of(LocalDate.now().year, LocalDate.now().month, 1))
+    }
+
+    var selectedDate: LocalDate? by remember {mutableStateOf(null)}
+
+    val totalNumberOfPages = 24000 // 2000 years
+    val initialPageNumber = 12000
+
+    val pagerState = rememberPagerState(
+        pageCount = {
+            totalNumberOfPages
+        },
+        initialPage = initialPageNumber
+    )
+
+    val animationScope = rememberCoroutineScope()
+
     Scaffold (
         topBar = {SubjectDetailScreenTopBar(subject, onBackPress)},
         containerColor = Color.White
-    ) {
-        Calendar(
-            modifier = Modifier.padding(it),
-            viewModel = viewModel
+    ) { paddingValues->
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                key = { pageIndex ->
+                    val monthOffset = pageIndex.toLong() - initialPageNumber.toLong()
+                    monthYear.plusMonths(monthOffset).toString()
+                },
+                beyondViewportPageCount = 1
+            ) { page ->
+                var currentMonthYear: LocalDate = monthYear
+                if (page < initialPageNumber) {
+                    currentMonthYear = monthYear.minusMonths((initialPageNumber - page).toLong())
+                } else if (page > initialPageNumber) {
+                    currentMonthYear = monthYear.plusMonths((page - initialPageNumber).toLong())
+                }
+
+                Calendar(
+                    subject = subject,
+                    month = currentMonthYear.month,
+                    year = currentMonthYear.year,
+                    selectedDate = selectedDate,
+                    dayClicked = {
+                        val selectedMonth = it.monthValue
+                        val monthOnScreen = currentMonthYear.monthValue
+
+                        selectedDate = it
+
+                        if (((selectedMonth) % 12) + 1 == monthOnScreen) {
+                            animationScope.launch {
+                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                            }
+                        }
+                        else if (((selectedMonth + 10) % 12) + 1 == monthOnScreen ) {
+                            animationScope.launch {
+                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                            }
+                        }
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier
+                .height(5.dp)
+            )
+
+            // setting the selectedDate null if the current page does not hold the selected date
+            var currentMonthYear: LocalDate = monthYear
+            val page = pagerState.currentPage
+            if (page < initialPageNumber) {
+                currentMonthYear = monthYear.minusMonths((initialPageNumber - page).toLong())
+            } else if (page > initialPageNumber) {
+                currentMonthYear = monthYear.plusMonths((page - initialPageNumber).toLong())
+            }
+            if (selectedDate != null &&
+                (selectedDate!!.month != currentMonthYear.month || selectedDate!!.year != currentMonthYear.year)) {
+                selectedDate = null
+            }
+
+
+            InfoBox(subject, currentMonthYear.month, currentMonthYear.year, viewModel)
+
+            Spacer(modifier = Modifier
+                .height(5.dp)
+            )
+
+            ModificationBox(
+                viewModel = viewModel,
+                subject = subject,
+                date = selectedDate,
+                enableResetButton = pagerState.currentPage != initialPageNumber,
+                onReset = {
+                    animationScope.launch {
+                        pagerState.animateScrollToPage(initialPageNumber)
+                    }
+                }
+            )
+
+        }
+    }
+}
+
+@Composable
+fun InfoBox(
+    subject: Subject,
+    month: Month,
+    year: Int,
+    viewModel: AttendanceViewModel
+) {
+    Row {
+        InternalCircularProgressIndicator(
+            Modifier.weight(1f), 
+            subject,
+            "Monthly Attendance",
+            {
+                viewModel.getAttendanceRatio(subject, month, year)
+            }
+        )
+
+        InternalCircularProgressIndicator(
+            Modifier.weight(1f), 
+            subject,
+            "Total Attendance",
+            {
+                viewModel.getAttendanceRatio(subject)
+            }
         )
     }
 }
 
 @Composable
-fun Calendar(
+private fun InternalCircularProgressIndicator(
     modifier: Modifier = Modifier,
-    viewModel: AttendanceViewModel,
-    initialMonth: Month = LocalDate.now().month,
-    initialYear: Int = LocalDate.now().year
+    subject: Subject,
+    bottomText: String,
+    progress: () -> Float
 ) {
-    var monthYear by remember {mutableStateOf(LocalDate.of(initialYear, initialMonth, 1))}
-    val velocityTracker = remember { VelocityTracker() }
-    var swipeOffset by remember { mutableFloatStateOf(0f) }
+    val attendancePercentage = if (subject.presentDays + subject.absentDays != 0) {
+        subject.presentDays / (subject.presentDays + subject.absentDays)
+    } else {
+        100
+    }
 
-    Column (
+    Column(
         modifier = modifier
-            .padding(5.dp)
-            .fillMaxWidth()
-            .pointerInput(Unit) {
-                detectHorizontalDragGestures(
-                    onDragStart = {
-                        swipeOffset = 0f
-                        velocityTracker.resetTracking()
-                    },
-                    onHorizontalDrag = { change, dragAmount ->
-                        change.consume()
-                        swipeOffset += dragAmount
-                        velocityTracker.addPosition(change.uptimeMillis, change.position)
-                    },
-                    onDragEnd = {
-                        val velocity = velocityTracker.calculateVelocity().x
-                        val screenWidth = size.width
+            .padding(5.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box (
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .aspectRatio(1f),
+                color = Color.Green,
+                trackColor = Color.Red,
+                strokeWidth = 10.dp,
+                strokeCap = StrokeCap.Round,
+                progress = progress
+            )
 
-                        val swipeThreshold = screenWidth / 4f
-                        val velocityThreshold = 500f
+            Text("${(progress() * 100f).toInt()}%", fontSize = 30.sp)
+        }
 
-                        if (abs(swipeOffset) > swipeThreshold || abs(velocity) > velocityThreshold) {
-                            if (swipeOffset < 0 || (swipeOffset == 0f && velocity < -velocityThreshold)) {
-                                monthYear = monthYear.plusMonths(1)
-                            } else if (swipeOffset > 0 || velocity > velocityThreshold) {
-                                monthYear = monthYear.minusMonths(1)
-                            }
-                        }
-                        swipeOffset = 0f
-                    }
-                )
-            }
-        ,
+        Text(bottomText)
+    }
+}
+
+@Composable
+fun Calendar(
+    subject: Subject,
+    month: Month,
+    year: Int,
+    selectedDate: LocalDate?,
+    dayClicked: (LocalDate) -> Unit
+) {
+    Column (
+        modifier = Modifier
+            .padding(horizontal = 5.dp)
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
         Text(
-            text = "${monthYear.month.name.substring(0, 3)} ${monthYear.year}",
+            text = "${month.name.substring(0, 3)} $year",
             fontSize = 30.sp,
             color = Color.Black
         )
@@ -126,41 +262,155 @@ fun Calendar(
 
         Spacer(modifier = Modifier.height(5.dp))
 
-        MonthGrid(viewModel, monthYear)
+        MonthGrid(
+            subject = subject,
+            month = month,
+            year = year,
+            selectedDate = selectedDate,
+            dayClicked = {date ->
+                dayClicked(date)
+            }
+        )
+    }
+}
+
+@Composable
+fun ModificationBox(
+    viewModel: AttendanceViewModel,
+    subject: Subject,
+    date: LocalDate?,
+    enableResetButton: Boolean,
+    onReset: () -> Unit
+) {
+    Column (
+        modifier = Modifier
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ){
+        if (date != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val value = subject.attendance[date]
+
+                if (value != true) {
+                    Button(
+                        onClick = {
+                            viewModel.markPresent(subject, date)
+                        }
+                    ) {
+                        Text(
+                            text = "Mark Present"
+                        )
+                    }
+                }
+
+                if (value != false) {
+                    Button(
+                        onClick = {
+                            viewModel.markAbsent(subject, date)
+                        }
+                    ) {
+                        Text(
+                            text = "Mark Absent"
+                        )
+                    }
+                }
+
+                if (value != null) {
+                    Button(
+                        onClick = {
+                            viewModel.clearAttendance(subject, date)
+                        }
+                    ) {
+                        Text(
+                            text = "Clear"
+                        )
+                    }
+                }
+            }
+        }
+
+        if (enableResetButton) {
+            Button(
+                onClick = onReset
+            ) {
+                Text(
+                    text = "Reset"
+                )
+            }
+        }
     }
 }
 
 @Composable
 fun MonthGrid(
-    viewModel: AttendanceViewModel,
-    monthYear: LocalDate
+    subject: Subject,
+    month: Month,
+    year: Int,
+    selectedDate: LocalDate?,
+    dayClicked: (LocalDate) -> Unit
 ) {
     val density = LocalDensity.current
-    var boxSize by remember { mutableStateOf(0.dp) }
+    var boxSize by remember { mutableStateOf(50.dp) }
 
-    val daysList = constructDaysList(monthYear.month, monthYear.year)
+    val daysList = remember(month, year) {
+        constructDaysList(month, year)
+    }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .onSizeChanged {
-                boxSize = with(density) { it.width.toDp() / 7 }
+            .onGloballyPositioned() {
+                boxSize = with(density) { it.size.width.toDp() / 7 }
             }
     ) {
         for (week in 0 until 6) {
             Row (
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(boxSize)
             ) {
                 for (day in 0 until 7) {
                     val boxNumber = week * 7 + day
+                    val date = daysList[boxNumber]
+
+                    val value = subject.attendance[date]
+
+                    val boxColor = if (value != null) {
+                        if (value) {
+                            Color.Green
+                        } else {
+                            Color.Red
+                        }
+                    }
+                    else {
+                        Color.White
+                    }
 
                     Box (
                         modifier = Modifier
                             .size(boxSize)
+                            .clickable(
+                                onClick = { dayClicked(date) }
+                            )
                             .border(
-                                width = 0.25.dp,
+                                width =
+                                    if (selectedDate != null &&
+                                        selectedDate.dayOfMonth == date.dayOfMonth &&
+                                        selectedDate.month == date.month
+                                    ) {
+                                        1.dp
+                                    } else {
+                                        0.25.dp
+                                    },
                                 color = Color.Black
-                            ),
+                            )
+                            .background(boxColor),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -174,18 +424,16 @@ fun MonthGrid(
     }
 }
 
-fun constructDaysList(month: Month, year: Int): List<LocalDate> {
+fun constructDaysList(month: Month, year: Int): MutableList<LocalDate> {
     val daysList = mutableListOf<LocalDate>()
     var firstDay = LocalDate.of(year, month, 1)
 
     while(firstDay.dayOfWeek != DayOfWeek.MONDAY) {
-        println(firstDay.toString())
         firstDay = firstDay.minusDays(1)
     }
 
     for (i in 0..41) {
         daysList.add(firstDay)
-        println(firstDay.toString())
         firstDay = firstDay.plusDays(1)
     }
 
@@ -194,14 +442,25 @@ fun constructDaysList(month: Month, year: Int): List<LocalDate> {
 
 @Composable
 fun WeekDays() {
+    val density = LocalDensity.current
+
+    var textWidth by remember { mutableStateOf(0.dp) }
+
     Row (
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceAround,
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned(
+                onGloballyPositioned = {
+                    textWidth = with(density) { it.size.width.toDp() / 7 }
+                }
+            )
     ) {
         for (day in DayOfWeek.entries) {
             Text(
-                text = day.name.substring(0, 3)
+                text = day.name.substring(0, 3),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .width(textWidth)
             )
         }
     }

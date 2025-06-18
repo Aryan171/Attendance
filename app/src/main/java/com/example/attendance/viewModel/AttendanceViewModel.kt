@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import java.time.Month
 
 class AttendanceViewModel(
     private val dao: SubjectDao
@@ -135,6 +136,38 @@ class AttendanceViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _subjectList.clear()
             _subjectList.addAll(dao.getAllSubjects())
+        }
+    }
+
+    fun getAttendanceRatio(subject: Subject, month: Month, year: Int): Float {
+        var date = LocalDate.of(year, month, 1)
+        var absentDays = 0.0f
+        var presentDays = 0.0f
+
+        while(date.month == month) {
+            if (subject.attendance[date] == true) {
+                presentDays++
+            } else if (subject.attendance[date] == false) {
+                absentDays++
+            }
+            date = date.plusDays(1)
+        }
+
+        val totalDays = absentDays + presentDays
+        return if (totalDays == 0f) {
+            1f
+        } else {
+            presentDays / totalDays
+        }
+    }
+
+    fun getAttendanceRatio(subject: Subject): Float {
+        val totalDays = subject.absentDays + subject.presentDays
+
+        return if (totalDays == 0) {
+            1f
+        } else {
+            subject.presentDays.toFloat() / totalDays
         }
     }
 }

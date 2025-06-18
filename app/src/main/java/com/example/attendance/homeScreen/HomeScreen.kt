@@ -63,9 +63,6 @@ fun HomeScreen(
     subjectCardOnClick: (subject: Subject) -> Unit
 ) {
     val subjectList = viewModel.subjectList
-    if (subjectList.size > 0){// remove this function call**********************************************
-        subjectCardOnClick(subjectList[0])
-    }
     Scaffold(
         containerColor = Color.White,
         topBar = {HomeScreenTopBar(viewModel)}
@@ -341,11 +338,7 @@ fun SubjectCard(
 
                 CircularProgressIndicator(
                 progress = {
-                    if (totalDays != 0f) {
-                        subject.presentDays.toFloat() / totalDays
-                    } else {
-                        1f
-                    }
+                    viewModel.getAttendanceRatio(subject)
                 },
                 modifier = Modifier,
                 color = Color(255, 132, 0, 255),
@@ -355,13 +348,7 @@ fun SubjectCard(
                 )
 
                 Text(
-                    text = "${
-                        if (totalDays != 0f) {
-                            ((subject.presentDays.toFloat() * 100.0f) / totalDays).toInt()
-                        } else {
-                            100
-                        }
-                    }%",
+                    text = "${(viewModel.getAttendanceRatio(subject) * 100f).toInt()}%",
                     color = Color.Black
                 )
             }
