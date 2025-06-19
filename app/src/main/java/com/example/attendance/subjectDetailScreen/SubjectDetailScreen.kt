@@ -1,8 +1,14 @@
 package com.example.attendance.subjectDetailScreen
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
@@ -289,63 +296,84 @@ fun ModificationBox(
     showResetButton: Boolean,
     onReset: () -> Unit
 ) {
+    val buttonHeight = 50.dp
+
+    val resetButtonAnimation by animateDpAsState(
+        targetValue = if (showResetButton) {
+            buttonHeight
+        } else {
+            0.dp
+        },
+        animationSpec = tween(500)
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.Bottom
     ) {
-        if (date != null && showModificationButtons) {
             val value = subject.attendance[date]
 
-            if (value != true) {
-                Button(
-                    onClick = {
-                        viewModel.markPresent(subject, date)
-                    }
-                ) {
-                    Text(
-                        text = "Mark Present"
-                    )
-                }
-            }
-
-            if (value != false) {
-                Button(
-                    onClick = {
-                        viewModel.markAbsent(subject, date)
-                    }
-                ) {
-                    Text(
-                        text = "Mark Absent"
-                    )
-                }
-            }
-
-            if (value != null) {
-                Button(
-                    onClick = {
-                        viewModel.clearAttendance(subject, date)
-                    }
-                ) {
-                    Text(
-                        text = "Clear"
-                    )
-                }
-            }
-        }
-
-        if (showResetButton) {
-            Button(
-                onClick = onReset
+            ModificationBoxButton(
+                visible = date != null && showModificationButtons && value != true,
+                text = "Mark Present"
             ) {
-                Text(
-                    text = "Reset"
-                )
+                if (date != null) {
+                    viewModel.markPresent(subject, date)
+                }
             }
+
+            ModificationBoxButton(
+                visible = date != null && showModificationButtons && value != false,
+                text = "Mark Absent"
+            ) {
+                if (date != null) {
+                    viewModel.markAbsent(subject, date)
+                }
+            }
+
+            ModificationBoxButton(
+                visible = date != null && showModificationButtons && value != null,
+                text = "Clear"
+            ) {
+                if (date != null) {
+                    viewModel.clearAttendance(subject, date)
+                }
+            }
+
+        ModificationBoxButton(
+            visible = showResetButton,
+            text = "Reset",
+            onClick = onReset
+        )
+    }
+}
+
+@Composable
+fun ModificationBoxButton(
+    visible: Boolean,
+    text: String,
+    onClick: () -> Unit
+) {
+    AnimatedVisibility (
+        visible = visible,
+        enter = expandIn(
+            expandFrom = Alignment.Center
+        ) + fadeIn()
+        ,
+        exit = shrinkOut(
+            shrinkTowards = Alignment.Center
+        ) + fadeOut()
+    ) {
+        Button(
+            onClick = onClick
+        ) {
+            Text(
+                text = text
+            )
         }
     }
-
 }
 
 @Composable
