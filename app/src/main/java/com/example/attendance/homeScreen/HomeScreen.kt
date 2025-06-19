@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,6 +61,7 @@ import com.example.attendance.subjectDetailScreen.InternalCircularProgressIndica
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.serialization.Serializable
 import java.time.LocalDate
+import kotlin.math.min
 
 @Serializable
 object HomeScreen
@@ -252,7 +254,7 @@ fun MenuPopup(
             hidePopup() },
         properties = PopupProperties(focusable = true)
     ) {
-        Column (
+        /*Column (
             modifier = Modifier
                 .border(width = Dp.Hairline, color = Color.Black, shape = RoundedCornerShape(10.dp))
                 .clip(RoundedCornerShape((10.dp)))
@@ -261,7 +263,6 @@ fun MenuPopup(
             val currentDate = LocalDate.now()
 
             InternalCustomButton("Set all Present Today") {
-                println("pupupapa")
                 viewModel.setAllPresent(currentDate)
                 hidePopup()
             }
@@ -324,6 +325,82 @@ fun MenuPopup(
                 }
                 hidePopup()
             }
+        }*/
+
+        val currentDate = LocalDate.now()
+
+        ButtonColumn(
+            hidePopupOnButtonPress = true,
+            hidePopup = hidePopup,
+            width = 250.dp,
+            buttonTextList = listOf(
+                "Set all Present Today",
+                "Set all Absent Today",
+                "Reset all attendance for today",
+                "Sort by Name",
+                "Sort by most attended percent",
+                "Sort by least attended percent",
+                "Sort by most attended days",
+                "Sort by least attended days",
+                "Sort by most absent days",
+                "Sort by least absent days"
+                ),
+            onClickList = listOf(
+                { viewModel.setAllPresent(currentDate) },
+                { viewModel.setAllAbsent(currentDate) },
+                {viewModel.clearAllAttendance(currentDate)},
+                {viewModel.sortSubjectListBy{a, b ->
+                    a.name.compareTo(b.name)
+                }},
+                {viewModel.sortSubjectListBy{a, b ->
+                    viewModel.getAttendanceRatio(b).compareTo(viewModel.getAttendanceRatio(a))
+                }},
+                {viewModel.sortSubjectListBy{a, b ->
+                    viewModel.getAttendanceRatio(a).compareTo(viewModel.getAttendanceRatio(b))
+                }},
+                {viewModel.sortSubjectListBy{a, b ->
+                    b.presentDays.compareTo(a.presentDays)
+                }},
+                {viewModel.sortSubjectListBy { a, b ->
+                    a.presentDays.compareTo(b.presentDays)
+                }},
+                {viewModel.sortSubjectListBy{a, b ->
+                    b.absentDays.compareTo(a.absentDays)
+                }},
+                {viewModel.sortSubjectListBy { a, b ->
+                    a.absentDays.compareTo(b.absentDays)
+                }}
+            ),
+        )
+    }
+}
+
+@Composable
+fun ButtonColumn(
+    hidePopupOnButtonPress: Boolean = true,
+    hidePopup: () -> Unit,
+    width: Dp,
+    iconList: List<ImageVector>? = null,
+    buttonTextList: List<String>,
+    onClickList: List<() -> Unit>
+) {
+    Column (
+        modifier = Modifier
+            .border(width = Dp.Hairline, color = Color.Black, shape = RoundedCornerShape(10.dp))
+            .width(width)
+            .clip(RoundedCornerShape((10.dp)))
+            .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(10.dp))
+    ) {
+        for (i in 0 until buttonTextList.size) {
+            InternalCustomButton(
+                text = buttonTextList[i],
+                imageVector = iconList?.get(i)
+            ) {
+                onClickList[i]()
+                if (hidePopupOnButtonPress) {
+                    hidePopup()
+                }
+            }
         }
     }
 }
@@ -331,19 +408,28 @@ fun MenuPopup(
 @Composable
 fun InternalCustomButton(
     text: String,
+    imageVector: ImageVector? = null,
     onClick: () -> Unit
 ) {
-    Box(
+    Row(
         modifier = Modifier
             .clickable {
                 onClick()
             }
             .border(width = Dp.Hairline, color = Color.Black, shape = RectangleShape)
-            .width(250.dp)
+            .fillMaxWidth()
             .background(Color.Transparent)
             .padding(15.dp),
-        contentAlignment = Alignment.CenterStart
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        if (imageVector != null) {
+            Icon(
+                imageVector = imageVector,
+                contentDescription = text
+            )
+        }
+
         Text(
             text = text,
             modifier = Modifier.background(Color.Transparent)
