@@ -94,7 +94,9 @@ fun SubjectDetailScreen(
         Column(
             modifier = Modifier
                 .padding(paddingValues)
-                .fillMaxSize()
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
             HorizontalPager(
                 state = pagerState,
@@ -136,9 +138,6 @@ fun SubjectDetailScreen(
                 )
             }
 
-            Spacer(modifier = Modifier
-                .height(5.dp)
-            )
             // finding the month and year that the current page is showing
             var currentMonthYear: LocalDate = monthYear
             val page = pagerState.currentPage
@@ -147,19 +146,9 @@ fun SubjectDetailScreen(
             } else if (page > initialPageNumber) {
                 currentMonthYear = monthYear.plusMonths((page - initialPageNumber).toLong())
             }
-            /*
-            // setting the selectedDate null if the current page does not hold the selected date
-            if (selectedDate != null &&
-                (selectedDate!!.month != currentMonthYear.month || selectedDate!!.year != currentMonthYear.year)) {
-                selectedDate = null
-            }*/
 
 
             InfoBox(subject, currentMonthYear.month, currentMonthYear.year, viewModel)
-
-            Spacer(modifier = Modifier
-                .height(5.dp)
-            )
 
             val showModificationButtons = selectedDate != null &&
                     (selectedDate!!.month == currentMonthYear.month && selectedDate!!.year == currentMonthYear.year)
@@ -176,7 +165,6 @@ fun SubjectDetailScreen(
                     }
                 }
             )
-
         }
     }
 }
@@ -301,55 +289,48 @@ fun ModificationBox(
     showResetButton: Boolean,
     onReset: () -> Unit
 ) {
-    Column (
+    Row(
         modifier = Modifier
             .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
-    ){
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.Bottom
+    ) {
         if (date != null && showModificationButtons) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val value = subject.attendance[date]
+            val value = subject.attendance[date]
 
-                if (value != true) {
-                    Button(
-                        onClick = {
-                            viewModel.markPresent(subject, date)
-                        }
-                    ) {
-                        Text(
-                            text = "Mark Present"
-                        )
+            if (value != true) {
+                Button(
+                    onClick = {
+                        viewModel.markPresent(subject, date)
                     }
+                ) {
+                    Text(
+                        text = "Mark Present"
+                    )
                 }
+            }
 
-                if (value != false) {
-                    Button(
-                        onClick = {
-                            viewModel.markAbsent(subject, date)
-                        }
-                    ) {
-                        Text(
-                            text = "Mark Absent"
-                        )
+            if (value != false) {
+                Button(
+                    onClick = {
+                        viewModel.markAbsent(subject, date)
                     }
+                ) {
+                    Text(
+                        text = "Mark Absent"
+                    )
                 }
+            }
 
-                if (value != null) {
-                    Button(
-                        onClick = {
-                            viewModel.clearAttendance(subject, date)
-                        }
-                    ) {
-                        Text(
-                            text = "Clear"
-                        )
+            if (value != null) {
+                Button(
+                    onClick = {
+                        viewModel.clearAttendance(subject, date)
                     }
+                ) {
+                    Text(
+                        text = "Clear"
+                    )
                 }
             }
         }
@@ -364,6 +345,7 @@ fun ModificationBox(
             }
         }
     }
+
 }
 
 @Composable
