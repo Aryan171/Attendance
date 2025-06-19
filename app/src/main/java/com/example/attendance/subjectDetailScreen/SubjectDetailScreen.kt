@@ -2,6 +2,7 @@ package com.example.attendance.subjectDetailScreen
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -30,10 +31,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.twotone.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -264,9 +267,7 @@ fun InternalCircularProgressIndicator(
                 Text("${animatedPercentage}%", fontSize = percentageFontSize)
 
                 if (intPair != null) {
-                    Row(
-
-                    ) {
+                    Row {
                         Text(
                             text = "$animatedFirstInt  ",
                             fontSize = percentageFontSize,
@@ -335,45 +336,62 @@ fun ModificationBox(
     showResetButton: Boolean,
     onReset: () -> Unit
 ) {
+    var rowWidth by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
+
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(),
-        horizontalArrangement = Arrangement.SpaceEvenly
+            .fillMaxSize()
+            .onGloballyPositioned {
+                rowWidth = with(density) { it.size.width.toDp() }
+            }
+        ,
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-            val value = subject.attendance[date]
+        val value = subject.attendance[date]
+        val maxButtonHeight = 50.dp
+        val maxButtonWidth = rowWidth / 3
 
-            ModificationBoxButton(
-                visible = date != null && showModificationButtons && value != true,
-                text = "Mark Present"
-            ) {
-                if (date != null) {
-                    viewModel.markPresent(subject, date)
-                }
+        ModificationBoxButton(
+            visible = date != null && showModificationButtons && value != true,
+            text = "Mark Present",
+            maxButtonHeight = maxButtonHeight,
+            maxButtonWidth = maxButtonWidth
+        ) {
+            if (date != null) {
+                viewModel.markPresent(subject, date)
             }
+        }
 
-            ModificationBoxButton(
-                visible = date != null && showModificationButtons && value != false,
-                text = "Mark Absent"
-            ) {
-                if (date != null) {
-                    viewModel.markAbsent(subject, date)
-                }
+        ModificationBoxButton(
+            visible = date != null && showModificationButtons && value != false,
+            text = "Mark Absent",
+            maxButtonHeight = maxButtonHeight,
+            maxButtonWidth = maxButtonWidth
+        ) {
+            if (date != null) {
+                viewModel.markAbsent(subject, date)
             }
+        }
 
-            ModificationBoxButton(
-                visible = date != null && showModificationButtons && value != null,
-                text = "Clear"
-            ) {
-                if (date != null) {
-                    viewModel.clearAttendance(subject, date)
-                }
+        ModificationBoxButton(
+            visible = date != null && showModificationButtons && value != null,
+            text = "Clear",
+            maxButtonHeight = maxButtonHeight,
+            maxButtonWidth = maxButtonWidth
+        ) {
+            if (date != null) {
+                viewModel.clearAttendance(subject, date)
             }
+        }
 
         ModificationBoxButton(
             visible = showResetButton,
             text = "Reset",
-            onClick = onReset
+            onClick = onReset,
+            maxButtonHeight = maxButtonHeight,
+            maxButtonWidth = maxButtonWidth
         )
     }
 }
@@ -382,20 +400,39 @@ fun ModificationBox(
 fun ModificationBoxButton(
     visible: Boolean,
     text: String,
+    maxButtonHeight: Dp,
+    maxButtonWidth: Dp,
     onClick: () -> Unit
 ) {
-    AnimatedVisibility (
-        visible = visible,
-        enter = expandIn(
-            expandFrom = Alignment.BottomCenter
-        ) + fadeIn()
-        ,
-        exit = shrinkOut(
-            shrinkTowards = Alignment.BottomCenter
-        ) + fadeOut()
+    val animatedHeight by animateDpAsState(
+        targetValue = if (visible) {
+            maxButtonHeight
+        } else {
+            0.dp
+        },
+        animationSpec = tween(500)
+    )
+
+    val animatedWidth by animateDpAsState(
+        targetValue = if (visible) {
+            maxButtonWidth
+        } else {
+            0.dp
+        },
+        animationSpec = tween(500)
+    )
+
+    Box (
+        modifier = Modifier
+            .padding(2.dp)
     ) {
-        Button(
-            onClick = onClick
+        OutlinedButton(
+            modifier = Modifier
+                .size(animatedWidth, animatedHeight),
+            onClick = onClick,
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = Color.Black
+            )
         ) {
             Text(
                 text = text
@@ -424,13 +461,13 @@ fun MonthGrid(
                 boxSize = with(density) { it.size.width.toDp() / 7 }
             }
     ) {
-        for (week in 0 until 6) {
+        (0 until 6).forEach { week ->
             Row (
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(boxSize)
             ) {
-                for (dayOfWeek in 0 until 7) {
+                (0 until 7).forEach { dayOfWeek ->
                     val value = subject.attendance[day]
 
                     val boxSelected: Boolean = selectedDate != null &&
