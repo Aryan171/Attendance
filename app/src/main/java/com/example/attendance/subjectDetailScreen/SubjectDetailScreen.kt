@@ -1,5 +1,8 @@
 package com.example.attendance.subjectDetailScreen
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,6 +47,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.attendance.database.Subject
@@ -186,15 +190,19 @@ fun InfoBox(
 ) {
     Row {
         InternalCircularProgressIndicator(
-            Modifier.weight(1f),
-            "Monthly Attendance"
+            Modifier.weight(1f).padding(5.dp),
+            "Monthly Attendance",
+            50.sp,
+            10.dp
         ) {
             viewModel.getAttendanceRatio(subject, month, year)
         }
 
         InternalCircularProgressIndicator(
-            Modifier.weight(1f),
-            "Total Attendance"
+            Modifier.weight(1f).padding(5.dp),
+            "Total Attendance",
+            50.sp,
+            10.dp
         ) {
             viewModel.getAttendanceRatio(subject)
         }
@@ -202,15 +210,27 @@ fun InfoBox(
 }
 
 @Composable
-private fun InternalCircularProgressIndicator(
+fun InternalCircularProgressIndicator(
     modifier: Modifier = Modifier,
-    bottomText: String,
+    bottomText: String?,
+    percentageFontSize: TextUnit,
+    strokeWidth: Dp,
     progress: () -> Float
 ) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress(),
+        animationSpec = tween(durationMillis = 500)
+    )
+
+    val animatedPercentage by animateIntAsState(
+        targetValue = (progress() * 100).toInt(),
+        animationSpec = tween(durationMillis = 500)
+    )
+
     Column(
-        modifier = modifier
-            .padding(5.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Box (
             contentAlignment = Alignment.Center
@@ -220,16 +240,17 @@ private fun InternalCircularProgressIndicator(
                     .aspectRatio(1f),
                 color = Color.Green,
                 trackColor = Color.Red,
-                strokeWidth = 10.dp,
+                strokeWidth = strokeWidth,
                 strokeCap = StrokeCap.Round,
-                progress = progress,
+                progress = {animatedProgress},
                 gapSize = 0.dp
             )
 
-            Text("${(progress() * 100f).toInt()}%", fontSize = 50.sp)
+            Text("${animatedPercentage}%", fontSize = percentageFontSize)
         }
-
-        Text(bottomText)
+        if (bottomText != null) {
+            Text(bottomText)
+        }
     }
 }
 
@@ -243,7 +264,6 @@ fun Calendar(
 ) {
     Column (
         modifier = Modifier
-            .padding(horizontal = 5.dp)
             .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top

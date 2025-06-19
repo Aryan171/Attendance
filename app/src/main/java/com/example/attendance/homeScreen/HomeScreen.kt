@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,7 +26,6 @@ import androidx.compose.material.icons.twotone.Close
 import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Done
 import androidx.compose.material.icons.twotone.Refresh
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,16 +46,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.example.attendance.database.Subject
+import com.example.attendance.subjectDetailScreen.InternalCircularProgressIndicator
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.serialization.Serializable
 import java.time.LocalDate
@@ -72,19 +74,35 @@ fun HomeScreen(
         containerColor = Color.White,
         topBar = {HomeScreenTopBar(viewModel)}
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .padding(it)
-        ) {
-            items (
-                items = subjectList,
-                key = {it.id}
-            ){
-                SubjectCard(
-                    subject = it,
-                    viewModel = viewModel,
-                    onClick = subjectCardOnClick
+        if (subjectList.isEmpty()) {
+            Box (
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No Subjects Added",
+                    color = Color.LightGray,
+                    fontSize = 25.sp
                 )
+            }
+        }
+        else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it)
+            ) {
+                items(
+                    items = subjectList,
+                    key = { it.id }
+                ) {
+                    SubjectCard(
+                        subject = it,
+                        viewModel = viewModel,
+                        onClick = subjectCardOnClick
+                    )
+                }
             }
         }
     }
@@ -317,7 +335,7 @@ fun InternalCustomButton(
 ) {
     Box(
         modifier = Modifier
-            .clickable{
+            .clickable {
                 onClick()
             }
             .border(width = Dp.Hairline, color = Color.Black, shape = RectangleShape)
@@ -402,7 +420,10 @@ fun SubjectCard(
                     modifier = Modifier
                         .width(125.dp)
                         .padding(6.dp)
-                        .background(color = Color.White.copy(alpha = 0.7f), shape = RoundedCornerShape(10.dp))
+                        .background(
+                            color = Color.White.copy(alpha = 0.7f),
+                            shape = RoundedCornerShape(10.dp)
+                        )
                         .border(Dp.Hairline, Color.Black, RoundedCornerShape(10.dp))
                         .clip(RoundedCornerShape(10.dp)),
                     horizontalAlignment = Alignment.Start
@@ -440,7 +461,10 @@ fun SubjectCard(
             }
         }
 
-        Row {
+        Row (
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
             if(presentToday == null || !presentToday){
                 // Present button
                 IconButton(
@@ -486,26 +510,14 @@ fun SubjectCard(
                 }
             }
 
-            // Percent Attended
-            Box(
-                contentAlignment = Alignment.Center,
+            InternalCircularProgressIndicator(
+                modifier = Modifier
+                    .size(40.dp),
+                bottomText = null,
+                percentageFontSize = 15.sp,
+                2.dp
             ) {
-                CircularProgressIndicator(
-                    progress = {
-                        viewModel.getAttendanceRatio(subject)
-                    },
-                    modifier = Modifier,
-                    color = Color.Green,
-                    strokeWidth = 2.dp,
-                    trackColor = Color(255, 132, 0, 255),
-                    strokeCap = StrokeCap.Round,
-                    gapSize = 0.dp
-                )
-
-                Text(
-                    text = "${(viewModel.getAttendanceRatio(subject) * 100f).toInt()}%",
-                    color = Color.Black
-                )
+                viewModel.getAttendanceRatio(subject)
             }
         }
     }
