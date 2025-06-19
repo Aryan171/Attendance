@@ -1,7 +1,7 @@
 package com.example.attendance.subjectDetailScreen
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
@@ -51,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.modifier.modifierLocalOf
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -296,22 +296,11 @@ fun ModificationBox(
     showResetButton: Boolean,
     onReset: () -> Unit
 ) {
-    val buttonHeight = 50.dp
-
-    val resetButtonAnimation by animateDpAsState(
-        targetValue = if (showResetButton) {
-            buttonHeight
-        } else {
-            0.dp
-        },
-        animationSpec = tween(500)
-    )
-
     Row(
         modifier = Modifier
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.Bottom
+            .fillMaxWidth()
+            .animateContentSize(),
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
             val value = subject.attendance[date]
 
@@ -359,11 +348,11 @@ fun ModificationBoxButton(
     AnimatedVisibility (
         visible = visible,
         enter = expandIn(
-            expandFrom = Alignment.Center
+            expandFrom = Alignment.BottomCenter
         ) + fadeIn()
         ,
         exit = shrinkOut(
-            shrinkTowards = Alignment.Center
+            shrinkTowards = Alignment.BottomCenter
         ) + fadeOut()
     ) {
         Button(

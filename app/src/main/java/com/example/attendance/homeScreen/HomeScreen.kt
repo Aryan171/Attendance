@@ -1,7 +1,5 @@
 package com.example.attendance.homeScreen
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -48,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.input.ImeAction
@@ -64,7 +61,6 @@ import com.example.attendance.subjectDetailScreen.InternalCircularProgressIndica
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.serialization.Serializable
 import java.time.LocalDate
-import kotlin.math.min
 
 @Serializable
 object HomeScreen
