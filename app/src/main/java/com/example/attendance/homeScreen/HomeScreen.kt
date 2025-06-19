@@ -1,7 +1,9 @@
 package com.example.attendance.homeScreen
 
+import android.graphics.Rect
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,18 +20,21 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.twotone.Close
 import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Done
 import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.runtime.Composable
@@ -40,11 +46,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
@@ -91,66 +101,22 @@ fun HomeScreenTopBar(
     viewModel: AttendanceViewModel
 ) {
     var showAddPopup by remember {mutableStateOf(false)}
-    var text by remember {mutableStateOf("")}
+    var showMenuPopup by remember {mutableStateOf(true)}
 
     if (showAddPopup) {
-        Popup(
-            alignment = Alignment.Center,
-            onDismissRequest = {text = ""
-                showAddPopup = false },
-            properties = PopupProperties(focusable = true)
+        AddSubjectPopup(
+            viewModel
         ) {
-            OutlinedTextField(
-                colors = OutlinedTextFieldDefaults.colors().copy(
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp)
-                    .padding(vertical = 40.dp),
-                value = text,
-                keyboardActions = KeyboardActions(
-                    onGo = {
-                        if (text != "") {
-                            viewModel.addSubject(Subject(name = text.trim()))
-                            text = ""
-                            showAddPopup = false
-                        }
-                    }
-                ),
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Go
-                ),
-                onValueChange = {
-                    text = it
-                },
-                shape = RoundedCornerShape(10.dp),
-                label = {
-                    Text("Subject Name")
-                },
-                trailingIcon = {
-                    IconButton(
-                        onClick = {
-                            if (text != "") {
-                                viewModel.addSubject(Subject(name = text.trim()))
-                                text = ""
-                                showAddPopup = false
-                            }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "add subject",
-                            tint = Color.Black
-                        )
-                    }
-                }
-            )
+            showAddPopup = false
         }
+    }
 
+    if (showMenuPopup) {
+        MenuPopup(
+            viewModel
+        ) {
+            showMenuPopup = false
+        }
     }
 
     TopAppBar(
@@ -159,12 +125,25 @@ fun HomeScreenTopBar(
         },
         actions = {
             // add button
-            IconButton(onClick = {
-                showAddPopup = true
-            }) {
+            IconButton(
+                onClick = {
+                    showAddPopup = true
+                }
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
                     contentDescription = "add subject"
+                )
+            }
+
+            IconButton(
+                onClick = {
+                    showMenuPopup = true
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.MoreVert,
+                    contentDescription = "open menu"
                 )
             }
         },
@@ -176,6 +155,132 @@ fun HomeScreenTopBar(
             actionIconContentColor = Color.White
         )
     )
+}
+
+@Composable
+fun AddSubjectPopup(
+    viewModel: AttendanceViewModel,
+    hidePopup: () -> Unit
+) {
+    var text by remember {mutableStateOf("")}
+
+    Popup(
+        alignment = Alignment.Center,
+        onDismissRequest = {text = ""
+            hidePopup() },
+        properties = PopupProperties(focusable = true)
+    ) {
+        OutlinedTextField(
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                focusedContainerColor = Color.White.copy(alpha = 0.7f),
+                unfocusedContainerColor = Color.White.copy(alpha = 0.7f),
+                focusedLabelColor = Color.Black,
+                unfocusedLabelColor = Color.Black,
+                focusedBorderColor = Color.Black,
+                unfocusedBorderColor = Color.Black
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp)
+                .padding(vertical = 40.dp),
+            value = text,
+            keyboardActions = KeyboardActions(
+                onGo = {
+                    if (text != "") {
+                        viewModel.addSubject(Subject(name = text.trim()))
+                        text = ""
+                        hidePopup()
+                    }
+                }
+            ),
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Go
+            ),
+            onValueChange = {
+                text = it
+            },
+            shape = RoundedCornerShape(10.dp),
+            label = {
+                Text("Subject Name")
+            },
+            trailingIcon = {
+                IconButton(
+                    onClick = {
+                        if (text != "") {
+                            viewModel.addSubject(Subject(name = text.trim()))
+                            text = ""
+                            hidePopup()
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "add subject",
+                        tint = Color.Black
+                    )
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun MenuPopup(
+    viewModel: AttendanceViewModel,
+    hidePopup: () -> Unit
+) {
+    var text by remember {mutableStateOf("")}
+
+    Popup(
+        alignment = Alignment.TopEnd,
+        onDismissRequest = {text = ""
+            hidePopup() },
+        properties = PopupProperties(focusable = true)
+    ) {
+        Column (
+            modifier = Modifier
+                .border(width = Dp.Hairline, color = Color.Black, shape = RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape((10.dp)))
+                .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(10.dp))
+        ) {
+            InternalCustomButton("Set all Present Today") { }
+
+            InternalCustomButton("Set all Absent Today") { }
+
+            InternalCustomButton("Sort by Name") { }
+
+            InternalCustomButton("Sort by most attended percent") { }
+
+            InternalCustomButton("Sort by least attended percent") { }
+
+            InternalCustomButton("Sort by most attended days") { }
+
+            InternalCustomButton("Sort by least attended days") { }
+        }
+    }
+}
+
+@Composable
+fun InternalCustomButton(
+    text: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .clickable{onClick}
+            .border(width = Dp.Hairline, color = Color.Black, shape = RectangleShape)
+            .width(250.dp)
+            .background(Color.Transparent)
+            .padding(15.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.background(Color.Transparent)
+        )
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -334,16 +439,14 @@ fun SubjectCard(
             Box(
                 contentAlignment = Alignment.Center,
             ) {
-                val totalDays = (subject.presentDays + subject.absentDays).toFloat()
-
                 CircularProgressIndicator(
                 progress = {
                     viewModel.getAttendanceRatio(subject)
                 },
                 modifier = Modifier,
-                color = Color(255, 132, 0, 255),
+                color = Color.Green,
                 strokeWidth = 2.dp,
-                trackColor = Color.Transparent,
+                trackColor = Color(255, 132, 0, 255),
                 strokeCap = StrokeCap.Round,
                 )
 

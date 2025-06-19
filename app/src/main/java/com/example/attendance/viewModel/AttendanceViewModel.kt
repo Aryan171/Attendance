@@ -19,7 +19,7 @@ class AttendanceViewModel(
     private val dao: SubjectDao
 ): ViewModel() {
     init {
-        reloadSubjectList()
+        loadSubjectList()
     }
 
     companion object {
@@ -132,7 +132,7 @@ class AttendanceViewModel(
         }
     }
 
-    fun reloadSubjectList() {
+    fun loadSubjectList() {
         viewModelScope.launch(Dispatchers.IO) {
             _subjectList.clear()
             _subjectList.addAll(dao.getAllSubjects())

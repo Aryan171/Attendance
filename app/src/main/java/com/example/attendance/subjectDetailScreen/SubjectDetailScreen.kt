@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.attendance.database.Subject
@@ -178,38 +179,27 @@ fun InfoBox(
 ) {
     Row {
         InternalCircularProgressIndicator(
-            Modifier.weight(1f), 
-            subject,
-            "Monthly Attendance",
-            {
-                viewModel.getAttendanceRatio(subject, month, year)
-            }
-        )
+            Modifier.weight(1f),
+            "Monthly Attendance"
+        ) {
+            viewModel.getAttendanceRatio(subject, month, year)
+        }
 
         InternalCircularProgressIndicator(
-            Modifier.weight(1f), 
-            subject,
-            "Total Attendance",
-            {
-                viewModel.getAttendanceRatio(subject)
-            }
-        )
+            Modifier.weight(1f),
+            "Total Attendance"
+        ) {
+            viewModel.getAttendanceRatio(subject)
+        }
     }
 }
 
 @Composable
 private fun InternalCircularProgressIndicator(
     modifier: Modifier = Modifier,
-    subject: Subject,
     bottomText: String,
     progress: () -> Float
 ) {
-    val attendancePercentage = if (subject.presentDays + subject.absentDays != 0) {
-        subject.presentDays / (subject.presentDays + subject.absentDays)
-    } else {
-        100
-    }
-
     Column(
         modifier = modifier
             .padding(5.dp),
@@ -365,7 +355,7 @@ fun MonthGrid(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .onGloballyPositioned() {
+            .onGloballyPositioned {
                 boxSize = with(density) { it.size.width.toDp() / 7 }
             }
     ) {
@@ -406,7 +396,7 @@ fun MonthGrid(
                                     ) {
                                         1.dp
                                     } else {
-                                        0.25.dp
+                                        Dp.Hairline
                                     },
                                 color = Color.Black
                             )
@@ -432,7 +422,7 @@ fun constructDaysList(month: Month, year: Int): MutableList<LocalDate> {
         firstDay = firstDay.minusDays(1)
     }
 
-    for (i in 0..41) {
+    (0..41).forEach { i ->
         daysList.add(firstDay)
         firstDay = firstDay.plusDays(1)
     }
