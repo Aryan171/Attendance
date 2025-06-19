@@ -140,17 +140,17 @@ class AttendanceViewModel(
     }
 
     fun getAttendanceRatio(subject: Subject, month: Month, year: Int): Float {
-        var date = LocalDate.of(year, month, 1)
+        var day = LocalDate.of(year, month, 1)
         var absentDays = 0.0f
         var presentDays = 0.0f
 
-        while(date.month == month) {
-            if (subject.attendance[date] == true) {
+        while(day.month == month) {
+            if (subject.attendance[day] == true) {
                 presentDays++
-            } else if (subject.attendance[date] == false) {
+            } else if (subject.attendance[day] == false) {
                 absentDays++
             }
-            date = date.plusDays(1)
+            day = day.plusDays(1)
         }
 
         val totalDays = absentDays + presentDays
@@ -193,5 +193,33 @@ class AttendanceViewModel(
         comparator: (Subject, Subject) -> Int
     ) {
         _subjectList.sortWith(comparator)
+    }
+
+    fun presentDaysInMonth(subject: Subject, month: Month, year: Int): Int {
+        var day = LocalDate.of(year, month, 1)
+        var res = 0
+
+        while(day.month == month) {
+            if (subject.attendance[day] == true) {
+                res++
+            }
+            day = day.plusDays(1)
+        }
+
+        return res
+    }
+
+    fun absentDaysInMonth(subject: Subject, month: Month, year: Int): Int {
+        var day = LocalDate.of(year, month, 1)
+        var res = 0
+
+        while(day.month == month) {
+            if (subject.attendance[day] == false) {
+                res++
+            }
+            day = day.plusDays(1)
+        }
+
+        return res
     }
 }

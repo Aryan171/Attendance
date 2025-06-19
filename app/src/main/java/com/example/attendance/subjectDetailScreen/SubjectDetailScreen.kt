@@ -154,7 +154,6 @@ fun SubjectDetailScreen(
                 currentMonthYear = monthYear.plusMonths((page - initialPageNumber).toLong())
             }
 
-
             InfoBox(subject, currentMonthYear.month, currentMonthYear.year, viewModel)
 
             val showModificationButtons = selectedDate != null &&
@@ -185,22 +184,29 @@ fun InfoBox(
 ) {
     Row {
         InternalCircularProgressIndicator(
-            Modifier.weight(1f).padding(5.dp),
-            "Monthly Attendance",
-            50.sp,
-            10.dp
-        ) {
-            viewModel.getAttendanceRatio(subject, month, year)
-        }
+            modifier = Modifier
+                .weight(1f)
+                .padding(5.dp),
+            bottomText = "Monthly Attendance",
+            intPair = Pair(
+                viewModel.presentDaysInMonth(subject, month, year),
+                viewModel.absentDaysInMonth(subject, month, year)
+            ),
+            percentageFontSize = 50.sp,
+            strokeWidth = 10.dp,
+            progress = viewModel.getAttendanceRatio(subject, month, year)
+        )
 
         InternalCircularProgressIndicator(
-            Modifier.weight(1f).padding(5.dp),
-            "Total Attendance",
-            50.sp,
-            10.dp
-        ) {
-            viewModel.getAttendanceRatio(subject)
-        }
+            modifier = Modifier
+                .weight(1f)
+                .padding(5.dp),
+            bottomText = "Total Attendance",
+            intPair = Pair(subject.presentDays, subject.absentDays),
+            percentageFontSize = 50.sp,
+            strokeWidth = 10.dp,
+            progress = viewModel.getAttendanceRatio(subject)
+        )
     }
 }
 
@@ -208,17 +214,28 @@ fun InfoBox(
 fun InternalCircularProgressIndicator(
     modifier: Modifier = Modifier,
     bottomText: String?,
+    intPair: Pair<Int, Int>? = null,
     percentageFontSize: TextUnit,
     strokeWidth: Dp,
-    progress: () -> Float
+    progress: Float
 ) {
     val animatedProgress by animateFloatAsState(
-        targetValue = progress(),
+        targetValue = progress,
         animationSpec = tween(durationMillis = 500)
     )
 
     val animatedPercentage by animateIntAsState(
-        targetValue = (progress() * 100).toInt(),
+        targetValue = (progress * 100).toInt(),
+        animationSpec = tween(durationMillis = 500)
+    )
+
+    val animatedFirstInt by animateIntAsState(
+        targetValue = intPair?.first ?: 0,
+        animationSpec = tween(durationMillis = 500)
+    )
+
+    val animatedSecondInt by animateIntAsState(
+        targetValue = intPair?.second ?: 0,
         animationSpec = tween(durationMillis = 500)
     )
 
@@ -241,7 +258,30 @@ fun InternalCircularProgressIndicator(
                 gapSize = 0.dp
             )
 
-            Text("${animatedPercentage}%", fontSize = percentageFontSize)
+            Column (
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text("${animatedPercentage}%", fontSize = percentageFontSize)
+
+                if (intPair != null) {
+                    Row(
+
+                    ) {
+                        Text(
+                            text = "$animatedFirstInt  ",
+                            fontSize = percentageFontSize,
+                            color = Color.Green
+                        )
+
+                        Text(
+                            text = "$animatedSecondInt",
+                            fontSize = percentageFontSize,
+                            color = Color.Red
+                        )
+                    }
+                }
+            }
         }
         if (bottomText != null) {
             Text(bottomText)

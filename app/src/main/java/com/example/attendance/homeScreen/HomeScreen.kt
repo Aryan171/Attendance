@@ -270,7 +270,7 @@ fun MenuPopup(
                 "Sort by least attended days",
                 "Sort by most absent days",
                 "Sort by least absent days"
-                ),
+            ),
             onClickList = listOf(
                 { viewModel.setAllPresent(currentDate) },
                 { viewModel.setAllAbsent(currentDate) },
@@ -487,10 +487,9 @@ fun SubjectCard(
                     .size(40.dp),
                 bottomText = null,
                 percentageFontSize = 15.sp,
-                strokeWidth = 2.dp
-            ) {
-                viewModel.getAttendanceRatio(subject)
-            }
+                strokeWidth = 2.dp,
+                progress = viewModel.getAttendanceRatio(subject)
+            )
         }
     }
 }
