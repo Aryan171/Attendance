@@ -1,5 +1,7 @@
 package com.example.attendance.homeScreen
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -46,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.input.ImeAction
@@ -254,79 +257,6 @@ fun MenuPopup(
             hidePopup() },
         properties = PopupProperties(focusable = true)
     ) {
-        /*Column (
-            modifier = Modifier
-                .border(width = Dp.Hairline, color = Color.Black, shape = RoundedCornerShape(10.dp))
-                .clip(RoundedCornerShape((10.dp)))
-                .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(10.dp))
-        ) {
-            val currentDate = LocalDate.now()
-
-            InternalCustomButton("Set all Present Today") {
-                viewModel.setAllPresent(currentDate)
-                hidePopup()
-            }
-
-            InternalCustomButton("Set all Absent Today") {
-                viewModel.setAllAbsent(currentDate)
-                hidePopup()
-            }
-
-            InternalCustomButton("Reset all attendance for today") {
-                viewModel.clearAllAttendance(currentDate)
-                hidePopup()
-            }
-
-            InternalCustomButton("Sort by Name") {
-                viewModel.sortSubjectListBy{a, b ->
-                    a.name.compareTo(b.name)
-                }
-                hidePopup()
-            }
-
-            InternalCustomButton("Sort by most attended percent") {
-                viewModel.sortSubjectListBy{a, b ->
-                    viewModel.getAttendanceRatio(b).compareTo(viewModel.getAttendanceRatio(a))
-                }
-                hidePopup()
-            }
-
-            InternalCustomButton("Sort by least attended percent") {
-                viewModel.sortSubjectListBy{a, b ->
-                    viewModel.getAttendanceRatio(a).compareTo(viewModel.getAttendanceRatio(b))
-                }
-                hidePopup()
-            }
-
-            InternalCustomButton("Sort by most attended days") {
-                viewModel.sortSubjectListBy{a, b ->
-                    b.presentDays.compareTo(a.presentDays)
-                }
-                hidePopup()
-            }
-
-            InternalCustomButton("Sort by least attended days") {
-                viewModel.sortSubjectListBy {a, b ->
-                    a.presentDays.compareTo(b.presentDays)
-                }
-                hidePopup()
-            }
-
-            InternalCustomButton("Sort by most absent days") {
-                viewModel.sortSubjectListBy{a, b ->
-                    b.absentDays.compareTo(a.absentDays)
-                }
-                hidePopup()
-            }
-
-            InternalCustomButton("Sort by least absent days") {
-                viewModel.sortSubjectListBy {a, b ->
-                    a.absentDays.compareTo(b.absentDays)
-                }
-                hidePopup()
-            }
-        }*/
-
         val currentDate = LocalDate.now()
 
         ButtonColumn(
@@ -497,54 +427,14 @@ fun SubjectCard(
 
         // Popup which appears on long press
         if (showPopup) {
-            Popup(
+            ResetDeletePopup(
+                subject = subject,
                 offset = IntOffset(0, rowHeight),
-                onDismissRequest = { showPopup = false },
-                properties = PopupProperties(focusable = true)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .width(125.dp)
-                        .padding(6.dp)
-                        .background(
-                            color = Color.White.copy(alpha = 0.7f),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                        .border(Dp.Hairline, Color.Black, RoundedCornerShape(10.dp))
-                        .clip(RoundedCornerShape(10.dp)),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    // Reset Button
-                    SubjectCardPopupButton(
-                        onClick = {
-                            viewModel.resetAttendance(subject)
-                            showPopup = false
-                        },
-                        text = "Reset"
-                    ) {
-                        Icon(
-                            imageVector = Icons.TwoTone.Refresh,
-                            contentDescription = "Reset",
-                            tint = Color.Red
-                        )
-                    }
-
-                    // Delete Button
-                    SubjectCardPopupButton(
-                        onClick = {
-                            viewModel.deleteSubject(subject)
-                            showPopup = false
-                        },
-                        text = "Delete"
-                    ) {
-                        Icon(
-                            imageVector = Icons.TwoTone.Delete,
-                            contentDescription = "Delete",
-                            tint = Color.Red
-                        )
-                    }
-                }
-            }
+                viewModel = viewModel,
+                hidePopup = {
+                    showPopup = false
+                },
+            )
         }
 
         Row (
@@ -610,26 +500,33 @@ fun SubjectCard(
 }
 
 @Composable
-fun SubjectCardPopupButton(
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-    text: String,
-    icon: @Composable () -> Unit
+fun ResetDeletePopup(
+    subject: Subject,
+    offset: IntOffset,
+    viewModel: AttendanceViewModel,
+    hidePopup: () -> Unit
 ) {
-    Row(
-        modifier = modifier
-            .clickable(
-                onClick = onClick
-            )
-            .fillMaxWidth()
-            .background(Color.Transparent)
-            .border(Dp.Hairline, Color.Black)
-            .padding(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
+    Popup(
+        offset = offset,
+        onDismissRequest = hidePopup,
+        properties = PopupProperties(focusable = true)
     ) {
-        icon()
-
-        Text(text = text, color = Color.Black, modifier = Modifier.background(Color.Transparent))
+        ButtonColumn(
+            hidePopup = hidePopup,
+            hidePopupOnButtonPress = true,
+            width = 125.dp,
+            iconList = listOf(
+                Icons.TwoTone.Refresh,
+                Icons.TwoTone.Delete
+            ),
+            buttonTextList = listOf(
+                "Reset",
+                "Delete"
+            ),
+            onClickList = listOf(
+                { viewModel.resetAttendance(subject) },
+                { viewModel.deleteSubject(subject) }
+            )
+        )
     }
 }
