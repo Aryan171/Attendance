@@ -50,7 +50,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.modifier.modifierLocalOf
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -416,9 +415,7 @@ fun MonthGrid(
     val density = LocalDensity.current
     var boxSize by remember { mutableStateOf(50.dp) }
 
-    val daysList = remember(month, year) {
-        constructDaysList(month, year)
-    }
+    var day = getFirstDayOfGrid(month, year)
 
     Column(
         modifier = Modifier
@@ -433,15 +430,12 @@ fun MonthGrid(
                     .fillMaxWidth()
                     .height(boxSize)
             ) {
-                for (day in 0 until 7) {
-                    val boxNumber = week * 7 + day
-                    val date = daysList[boxNumber]
-
-                    val value = subject.attendance[date]
+                for (dayOfWeek in 0 until 7) {
+                    val value = subject.attendance[day]
 
                     val boxSelected: Boolean = selectedDate != null &&
-                            selectedDate.dayOfMonth == date.dayOfMonth &&
-                            selectedDate.month == date.month
+                            selectedDate.dayOfMonth == day.dayOfMonth &&
+                            selectedDate.month == day.month
 
                     val boxColor = if (value != null) {
                         if (value) {
@@ -449,10 +443,11 @@ fun MonthGrid(
                         } else {
                             Color.Red
                         }
-                    }
-                    else {
+                    } else {
                         Color.White
                     }
+
+                    val dayCopy = LocalDate.of(day.year, day.month, day.dayOfMonth)
 
                     Box (
                         modifier = Modifier
@@ -470,35 +465,31 @@ fun MonthGrid(
                             .background(boxColor, shape = CircleShape)
                             .clip(CircleShape)
                             .clickable(
-                                onClick = { dayClicked(date) }
+                                onClick = { dayClicked(dayCopy) }
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = daysList[boxNumber].dayOfMonth.toString(),
+                            text = day.dayOfMonth.toString(),
                             color = Color.Black
                         )
                     }
+
+                    day = day.plusDays(1)
                 }
             }
         }
     }
 }
 
-fun constructDaysList(month: Month, year: Int): MutableList<LocalDate> {
-    val daysList = mutableListOf<LocalDate>()
+fun getFirstDayOfGrid(month: Month, year: Int): LocalDate {
     var firstDay = LocalDate.of(year, month, 1)
 
     while(firstDay.dayOfWeek != DayOfWeek.MONDAY) {
         firstDay = firstDay.minusDays(1)
     }
 
-    (0..41).forEach { i ->
-        daysList.add(firstDay)
-        firstDay = firstDay.plusDays(1)
-    }
-
-    return daysList
+    return firstDay
 }
 
 @Composable
