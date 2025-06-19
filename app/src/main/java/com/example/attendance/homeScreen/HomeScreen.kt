@@ -400,11 +400,10 @@ fun SubjectCard(
 
     Row(
         modifier = Modifier
-            .fillMaxWidth()
             .padding(top = 10.dp, start = 10.dp, end = 10.dp)
+            .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
             .background(backGroundColor)
-            .padding(5.dp)
             .combinedClickable(
                 onClick = { onClick(subject) },
                 onLongClick = {
@@ -416,6 +415,7 @@ fun SubjectCard(
                     rowHeight = it.size.height
                 }
             )
+            .padding(5.dp)
         ,
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -491,7 +491,7 @@ fun SubjectCard(
                     .size(40.dp),
                 bottomText = null,
                 percentageFontSize = 15.sp,
-                2.dp
+                strokeWidth = 2.dp
             ) {
                 viewModel.getAttendanceRatio(subject)
             }
