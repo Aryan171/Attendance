@@ -1,6 +1,5 @@
 package com.example.attendance.homeScreen
 
-import android.graphics.Rect
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,14 +26,12 @@ import androidx.compose.material.icons.twotone.Done
 import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.runtime.Composable
@@ -46,11 +43,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -101,7 +96,7 @@ fun HomeScreenTopBar(
     viewModel: AttendanceViewModel
 ) {
     var showAddPopup by remember {mutableStateOf(false)}
-    var showMenuPopup by remember {mutableStateOf(true)}
+    var showMenuPopup by remember {mutableStateOf(false)}
 
     if (showAddPopup) {
         AddSubjectPopup(
@@ -245,19 +240,72 @@ fun MenuPopup(
                 .clip(RoundedCornerShape((10.dp)))
                 .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(10.dp))
         ) {
-            InternalCustomButton("Set all Present Today") { }
+            val currentDate = LocalDate.now()
 
-            InternalCustomButton("Set all Absent Today") { }
+            InternalCustomButton("Set all Present Today") {
+                println("pupupapa")
+                viewModel.setAllPresent(currentDate)
+                hidePopup()
+            }
 
-            InternalCustomButton("Sort by Name") { }
+            InternalCustomButton("Set all Absent Today") {
+                viewModel.setAllAbsent(currentDate)
+                hidePopup()
+            }
 
-            InternalCustomButton("Sort by most attended percent") { }
+            InternalCustomButton("Reset all attendance for today") {
+                viewModel.clearAllAttendance(currentDate)
+                hidePopup()
+            }
 
-            InternalCustomButton("Sort by least attended percent") { }
+            InternalCustomButton("Sort by Name") {
+                viewModel.sortSubjectListBy{a, b ->
+                    a.name.compareTo(b.name)
+                }
+                hidePopup()
+            }
 
-            InternalCustomButton("Sort by most attended days") { }
+            InternalCustomButton("Sort by most attended percent") {
+                viewModel.sortSubjectListBy{a, b ->
+                    viewModel.getAttendanceRatio(b).compareTo(viewModel.getAttendanceRatio(a))
+                }
+                hidePopup()
+            }
 
-            InternalCustomButton("Sort by least attended days") { }
+            InternalCustomButton("Sort by least attended percent") {
+                viewModel.sortSubjectListBy{a, b ->
+                    viewModel.getAttendanceRatio(a).compareTo(viewModel.getAttendanceRatio(b))
+                }
+                hidePopup()
+            }
+
+            InternalCustomButton("Sort by most attended days") {
+                viewModel.sortSubjectListBy{a, b ->
+                    b.presentDays.compareTo(a.presentDays)
+                }
+                hidePopup()
+            }
+
+            InternalCustomButton("Sort by least attended days") {
+                viewModel.sortSubjectListBy {a, b ->
+                    a.presentDays.compareTo(b.presentDays)
+                }
+                hidePopup()
+            }
+
+            InternalCustomButton("Sort by most absent days") {
+                viewModel.sortSubjectListBy{a, b ->
+                    b.absentDays.compareTo(a.absentDays)
+                }
+                hidePopup()
+            }
+
+            InternalCustomButton("Sort by least absent days") {
+                viewModel.sortSubjectListBy {a, b ->
+                    a.absentDays.compareTo(b.absentDays)
+                }
+                hidePopup()
+            }
         }
     }
 }
@@ -269,7 +317,9 @@ fun InternalCustomButton(
 ) {
     Box(
         modifier = Modifier
-            .clickable{onClick}
+            .clickable{
+                onClick()
+            }
             .border(width = Dp.Hairline, color = Color.Black, shape = RectangleShape)
             .width(250.dp)
             .background(Color.Transparent)
@@ -344,16 +394,17 @@ fun SubjectCard(
         // Popup which appears on long press
         if (showPopup) {
             Popup(
-                alignment = Alignment.TopStart,
                 offset = IntOffset(0, rowHeight),
                 onDismissRequest = { showPopup = false },
                 properties = PopupProperties(focusable = true)
             ) {
                 Column(
                     modifier = Modifier
+                        .width(125.dp)
                         .padding(6.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0, 0, 0, 20)),
+                        .background(color = Color.White.copy(alpha = 0.7f), shape = RoundedCornerShape(10.dp))
+                        .border(Dp.Hairline, Color.Black, RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(10.dp)),
                     horizontalAlignment = Alignment.Start
                 ) {
                     // Reset Button
@@ -440,14 +491,15 @@ fun SubjectCard(
                 contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator(
-                progress = {
-                    viewModel.getAttendanceRatio(subject)
-                },
-                modifier = Modifier,
-                color = Color.Green,
-                strokeWidth = 2.dp,
-                trackColor = Color(255, 132, 0, 255),
-                strokeCap = StrokeCap.Round,
+                    progress = {
+                        viewModel.getAttendanceRatio(subject)
+                    },
+                    modifier = Modifier,
+                    color = Color.Green,
+                    strokeWidth = 2.dp,
+                    trackColor = Color(255, 132, 0, 255),
+                    strokeCap = StrokeCap.Round,
+                    gapSize = 0.dp
                 )
 
                 Text(
@@ -471,12 +523,15 @@ fun SubjectCardPopupButton(
             .clickable(
                 onClick = onClick
             )
+            .fillMaxWidth()
+            .background(Color.Transparent)
+            .border(Dp.Hairline, Color.Black)
             .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
         icon()
 
-        Text(text = text, color = Color.Black)
+        Text(text = text, color = Color.Black, modifier = Modifier.background(Color.Transparent))
     }
 }

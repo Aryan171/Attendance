@@ -170,4 +170,28 @@ class AttendanceViewModel(
             subject.presentDays.toFloat() / totalDays
         }
     }
+
+    fun setAllPresent(date: LocalDate) {
+        for(subject in _subjectList) {
+            markPresent(subject, date)
+        }
+    }
+
+    fun setAllAbsent(date: LocalDate) {
+        for(subject in _subjectList) {
+            markAbsent(subject, date)
+        }
+    }
+
+    fun clearAllAttendance(date: LocalDate) {
+        for(subject in _subjectList) {
+            clearAttendance(subject, date)
+        }
+    }
+
+    fun sortSubjectListBy(
+        comparator: (Subject, Subject) -> Int
+    ) {
+        _subjectList.sortWith(comparator)
+    }
 }

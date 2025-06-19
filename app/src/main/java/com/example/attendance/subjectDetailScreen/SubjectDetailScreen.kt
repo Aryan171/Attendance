@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.twotone.ArrowBack
 import androidx.compose.material3.Button
@@ -36,6 +37,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -133,8 +135,7 @@ fun SubjectDetailScreen(
             Spacer(modifier = Modifier
                 .height(5.dp)
             )
-
-            // setting the selectedDate null if the current page does not hold the selected date
+            // finding the month and year that the current page is showing
             var currentMonthYear: LocalDate = monthYear
             val page = pagerState.currentPage
             if (page < initialPageNumber) {
@@ -142,10 +143,12 @@ fun SubjectDetailScreen(
             } else if (page > initialPageNumber) {
                 currentMonthYear = monthYear.plusMonths((page - initialPageNumber).toLong())
             }
+            /*
+            // setting the selectedDate null if the current page does not hold the selected date
             if (selectedDate != null &&
                 (selectedDate!!.month != currentMonthYear.month || selectedDate!!.year != currentMonthYear.year)) {
                 selectedDate = null
-            }
+            }*/
 
 
             InfoBox(subject, currentMonthYear.month, currentMonthYear.year, viewModel)
@@ -154,11 +157,15 @@ fun SubjectDetailScreen(
                 .height(5.dp)
             )
 
+            val showModificationButtons = selectedDate != null &&
+                    (selectedDate!!.month == currentMonthYear.month && selectedDate!!.year == currentMonthYear.year)
+
             ModificationBox(
                 viewModel = viewModel,
                 subject = subject,
+                showModificationButtons = showModificationButtons,
                 date = selectedDate,
-                enableResetButton = pagerState.currentPage != initialPageNumber,
+                showResetButton = pagerState.currentPage != initialPageNumber,
                 onReset = {
                     animationScope.launch {
                         pagerState.animateScrollToPage(initialPageNumber)
@@ -215,10 +222,11 @@ private fun InternalCircularProgressIndicator(
                 trackColor = Color.Red,
                 strokeWidth = 10.dp,
                 strokeCap = StrokeCap.Round,
-                progress = progress
+                progress = progress,
+                gapSize = 0.dp
             )
 
-            Text("${(progress() * 100f).toInt()}%", fontSize = 30.sp)
+            Text("${(progress() * 100f).toInt()}%", fontSize = 50.sp)
         }
 
         Text(bottomText)
@@ -268,8 +276,9 @@ fun Calendar(
 fun ModificationBox(
     viewModel: AttendanceViewModel,
     subject: Subject,
+    showModificationButtons: Boolean,
     date: LocalDate?,
-    enableResetButton: Boolean,
+    showResetButton: Boolean,
     onReset: () -> Unit
 ) {
     Column (
@@ -278,7 +287,7 @@ fun ModificationBox(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ){
-        if (date != null) {
+        if (date != null && showModificationButtons) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -325,7 +334,7 @@ fun ModificationBox(
             }
         }
 
-        if (enableResetButton) {
+        if (showResetButton) {
             Button(
                 onClick = onReset
             ) {
@@ -371,6 +380,10 @@ fun MonthGrid(
 
                     val value = subject.attendance[date]
 
+                    val boxSelected: Boolean = selectedDate != null &&
+                            selectedDate.dayOfMonth == date.dayOfMonth &&
+                            selectedDate.month == date.month
+
                     val boxColor = if (value != null) {
                         if (value) {
                             Color.Green
@@ -385,22 +398,21 @@ fun MonthGrid(
                     Box (
                         modifier = Modifier
                             .size(boxSize)
+                            .padding(2.dp)
+                            .border(
+                                width = 1.dp,
+                                color = if (boxSelected) {
+                                    Color.Black
+                                } else {
+                                    Color.Transparent
+                                },
+                                shape = CircleShape
+                            )
+                            .background(boxColor, shape = CircleShape)
+                            .clip(CircleShape)
                             .clickable(
                                 onClick = { dayClicked(date) }
-                            )
-                            .border(
-                                width =
-                                    if (selectedDate != null &&
-                                        selectedDate.dayOfMonth == date.dayOfMonth &&
-                                        selectedDate.month == date.month
-                                    ) {
-                                        1.dp
-                                    } else {
-                                        Dp.Hairline
-                                    },
-                                color = Color.Black
-                            )
-                            .background(boxColor),
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
