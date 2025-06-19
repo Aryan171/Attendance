@@ -1,15 +1,10 @@
 package com.example.attendance.subjectDetailScreen
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandIn
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,7 +25,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.twotone.ArrowBack
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -346,12 +340,12 @@ fun ModificationBox(
                 rowWidth = with(density) { it.size.width.toDp() }
             }
         ,
-        horizontalArrangement = Arrangement.SpaceEvenly,
+        horizontalArrangement = Arrangement.SpaceEvenly ,
         verticalAlignment = Alignment.CenterVertically
     ) {
         val value = subject.attendance[date]
         val maxButtonHeight = 50.dp
-        val maxButtonWidth = rowWidth / 3
+        val maxButtonWidth = (rowWidth - 20.dp) / 3
 
         ModificationBoxButton(
             visible = date != null && showModificationButtons && value != true,
@@ -422,21 +416,21 @@ fun ModificationBoxButton(
         animationSpec = tween(500)
     )
 
-    Box (
-        modifier = Modifier
-            .padding(2.dp)
-    ) {
+    if (animatedWidth > 0.dp) {
         OutlinedButton(
             modifier = Modifier
-                .size(animatedWidth, animatedHeight),
+                .size(animatedWidth, animatedHeight)
+                .animateContentSize(),
             onClick = onClick,
             colors = ButtonDefaults.outlinedButtonColors(
                 contentColor = Color.Black
             )
         ) {
-            Text(
-                text = text
-            )
+            if (animatedWidth > maxButtonWidth - 10.dp) {
+                Text(
+                    text = text
+                )
+            }
         }
     }
 }
