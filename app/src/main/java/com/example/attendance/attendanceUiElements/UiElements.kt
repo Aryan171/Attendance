@@ -1,4 +1,4 @@
-package com.example.attendance.AttendanceUiElements
+package com.example.attendance.attendanceUiElements
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
@@ -94,7 +94,7 @@ fun InternalCustomButton(
 }
 
 @Composable
-fun InternalCircularProgressIndicator(
+fun CircularProgressIndicator(
     modifier: Modifier = Modifier,
     bottomText: String?,
     intPair: Pair<Int, Int>? = null,

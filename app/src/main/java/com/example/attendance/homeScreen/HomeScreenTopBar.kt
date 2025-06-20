@@ -1,18 +1,10 @@
 package com.example.attendance.homeScreen
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
@@ -22,16 +14,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.example.attendance.database.Subject
+import com.example.attendance.attendanceUiElements.ButtonColumn
 import com.example.attendance.viewModel.AttendanceViewModel
-import com.example.attendance.AttendanceUiElements.ButtonColumn
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,16 +28,7 @@ import java.time.LocalDate
 fun HomeScreenTopBar(
     viewModel: AttendanceViewModel
 ) {
-    var showAddPopup by remember {mutableStateOf(false)}
     var showMenuPopup by remember {mutableStateOf(false)}
-
-    if (showAddPopup) {
-        AddSubjectPopup(
-            viewModel
-        ) {
-            showAddPopup = false
-        }
-    }
 
     if (showMenuPopup) {
         MenuPopup(
@@ -63,18 +43,6 @@ fun HomeScreenTopBar(
             Text("Attendance", maxLines = 1, overflow = TextOverflow.Ellipsis)
         },
         actions = {
-            // add button
-            IconButton(
-                onClick = {
-                    showAddPopup = true
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = "add subject"
-                )
-            }
-
             IconButton(
                 onClick = {
                     showMenuPopup = true
@@ -94,75 +62,6 @@ fun HomeScreenTopBar(
             actionIconContentColor = Color.White
         )
     )
-}
-
-@Composable
-fun AddSubjectPopup(
-    viewModel: AttendanceViewModel,
-    hidePopup: () -> Unit
-) {
-    var text by remember {mutableStateOf("")}
-
-    Popup(
-        alignment = Alignment.Center,
-        onDismissRequest = {text = ""
-            hidePopup() },
-        properties = PopupProperties(focusable = true)
-    ) {
-        OutlinedTextField(
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
-                focusedContainerColor = Color.White.copy(alpha = 0.7f),
-                unfocusedContainerColor = Color.White.copy(alpha = 0.7f),
-                focusedLabelColor = Color.Black,
-                unfocusedLabelColor = Color.Black,
-                focusedBorderColor = Color.Black,
-                unfocusedBorderColor = Color.Black
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(10.dp)
-                .padding(vertical = 40.dp),
-            value = text,
-            keyboardActions = KeyboardActions(
-                onGo = {
-                    if (text != "") {
-                        viewModel.addSubject(Subject(name = text.trim()))
-                        text = ""
-                        hidePopup()
-                    }
-                }
-            ),
-            keyboardOptions = KeyboardOptions.Default.copy(
-                imeAction = ImeAction.Go
-            ),
-            onValueChange = {
-                text = it
-            },
-            shape = RoundedCornerShape(10.dp),
-            label = {
-                Text("Subject Name")
-            },
-            trailingIcon = {
-                IconButton(
-                    onClick = {
-                        if (text != "") {
-                            viewModel.addSubject(Subject(name = text.trim()))
-                            text = ""
-                            hidePopup()
-                        }
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "add subject",
-                        tint = Color.Black
-                    )
-                }
-            }
-        )
-    }
 }
 
 @Composable

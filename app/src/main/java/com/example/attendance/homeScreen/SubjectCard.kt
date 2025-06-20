@@ -1,13 +1,17 @@
 package com.example.attendance.homeScreen
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Close
@@ -15,7 +19,6 @@ import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Done
 import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,14 +31,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.example.attendance.AttendanceUiElements.ButtonColumn
+import com.example.attendance.attendanceUiElements.ButtonColumn
+import com.example.attendance.attendanceUiElements.CircularProgressIndicator
 import com.example.attendance.database.Subject
-import com.example.attendance.AttendanceUiElements.InternalCircularProgressIndicator
 import com.example.attendance.viewModel.AttendanceViewModel
 import java.time.LocalDate
 
@@ -48,6 +52,9 @@ fun SubjectCard(
 ) {
     var showPopup by remember { mutableStateOf(false) }
     var rowHeight by remember { mutableIntStateOf(0) }
+
+    val maxIconButtonSize = 50.dp
+    val maxIconButtonPadding = 5.dp
 
     val currentDate = LocalDate.now()
 
@@ -69,6 +76,18 @@ fun SubjectCard(
         else {
             Color(236, 236, 236, 255)
         }
+
+    // Popup which appears on long press
+    if (showPopup) {
+        ResetDeletePopup(
+            subject = subject,
+            offset = IntOffset(0, rowHeight),
+            viewModel = viewModel,
+            hidePopup = {
+                showPopup = false
+            },
+        )
+    }
 
     Row(
         modifier = Modifier
@@ -97,25 +116,51 @@ fun SubjectCard(
             color = Color.Black
         )
 
-        // Popup which appears on long press
-        if (showPopup) {
-            ResetDeletePopup(
-                subject = subject,
-                offset = IntOffset(0, rowHeight),
-                viewModel = viewModel,
-                hidePopup = {
-                    showPopup = false
-                },
-            )
-        }
-
         Row (
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            if(presentToday == null || !presentToday){
-                // Present button
-                IconButton(
+            Row (
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                // absent button
+                SubjectCardIconButton(
+                    maxSize = maxIconButtonSize,
+                    maxPadding = maxIconButtonPadding,
+                    showButton = presentToday == null || presentToday,
+                    onClick = {
+                        viewModel.markAbsent(subject, currentDate)
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.TwoTone.Close,
+                        contentDescription = "Absent",
+                        tint = Color.Red
+                    )
+                }
+
+                // clear button
+                SubjectCardIconButton(
+                    maxSize = maxIconButtonSize,
+                    maxPadding = maxIconButtonPadding,
+                    showButton = presentToday != null,
+                    onClick = {
+                        viewModel.clearAttendance(subject, currentDate)
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.TwoTone.Refresh,
+                        contentDescription = "Clear",
+                        tint = Color.Black
+                    )
+                }
+
+                // present button
+                SubjectCardIconButton(
+                    maxSize = maxIconButtonSize,
+                    maxPadding = maxIconButtonPadding,
+                    showButton = presentToday == null || !presentToday,
                     onClick = {
                         viewModel.markPresent(subject, currentDate)
                     }
@@ -128,37 +173,7 @@ fun SubjectCard(
                 }
             }
 
-            if(presentToday == null || presentToday){
-                // Absent button
-                IconButton(
-                    onClick = {
-                        viewModel.markAbsent(subject, currentDate)
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.TwoTone.Close,
-                        contentDescription = "Absent",
-                        tint = Color.Red
-                    )
-                }
-            }
-
-            if(presentToday != null) {
-                // Clear button
-                IconButton(
-                    onClick = {
-                        viewModel.clearAttendance(subject, currentDate)
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.TwoTone.Refresh,
-                        contentDescription = "Clear",
-                        tint = Color.Black
-                    )
-                }
-            }
-
-            InternalCircularProgressIndicator(
+            CircularProgressIndicator(
                 modifier = Modifier
                     .size(40.dp),
                 bottomText = null,
@@ -166,6 +181,47 @@ fun SubjectCard(
                 strokeWidth = 2.dp,
                 progress = viewModel.getAttendanceRatio(subject)
             )
+        }
+    }
+}
+
+@Composable
+fun SubjectCardIconButton(
+    maxSize: Dp,
+    maxPadding: Dp,
+    showButton: Boolean,
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit
+) {
+
+    val animatedSize by animateDpAsState(
+        targetValue = if (showButton) {
+            maxSize
+        } else {
+            0.dp
+        }
+    )
+
+    val animatedPadding by animateDpAsState(
+        targetValue = if (showButton) {
+            maxPadding
+        } else {
+            0.dp
+        }
+    )
+
+    if (animatedSize > 0.dp) {
+        Box(
+            modifier = Modifier
+                .size(animatedSize)
+                .padding(animatedPadding)
+                .clip(CircleShape)
+                .clickable(
+                    onClick = onClick
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            icon()
         }
     }
 }

@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.attendance.AttendanceUiElements.InternalCircularProgressIndicator
+import com.example.attendance.attendanceUiElements.CircularProgressIndicator
 import com.example.attendance.database.Subject
 import com.example.attendance.viewModel.AttendanceViewModel
 import java.time.Month
@@ -19,7 +19,7 @@ fun InfoBox(
     viewModel: AttendanceViewModel
 ) {
     Row {
-        InternalCircularProgressIndicator(
+        CircularProgressIndicator(
             modifier = Modifier
                 .weight(1f)
                 .padding(5.dp),
@@ -33,7 +33,7 @@ fun InfoBox(
             progress = viewModel.getAttendanceRatio(subject, month, year)
         )
 
-        InternalCircularProgressIndicator(
+        CircularProgressIndicator(
             modifier = Modifier
                 .weight(1f)
                 .padding(5.dp),

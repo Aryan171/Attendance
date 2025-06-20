@@ -27,7 +27,10 @@ fun HomeScreen(
     val subjectList = viewModel.subjectList
     Scaffold(
         containerColor = Color.White,
-        topBar = {HomeScreenTopBar(viewModel)}
+        topBar = {HomeScreenTopBar(viewModel)},
+        floatingActionButton = {
+            AddSubjectButton(viewModel)
+        }
     ) {
         if (subjectList.isEmpty()) {
             Box (
