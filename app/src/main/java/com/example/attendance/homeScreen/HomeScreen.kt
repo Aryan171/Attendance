@@ -26,7 +26,6 @@ fun HomeScreen(
 ) {
     val subjectList = viewModel.subjectList
     Scaffold(
-        containerColor = Color.White,
         topBar = {HomeScreenTopBar(viewModel)},
         floatingActionButton = {
             AddSubjectButton(viewModel)

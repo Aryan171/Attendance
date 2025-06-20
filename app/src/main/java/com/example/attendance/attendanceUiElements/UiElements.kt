@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -30,6 +29,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import com.example.attendance.ui.theme.absent
+import com.example.attendance.ui.theme.present
+import com.example.attendance.ui.theme.roundedCornerShape
 
 @Composable
 fun ButtonColumn(
@@ -42,10 +44,10 @@ fun ButtonColumn(
 ) {
     Column (
         modifier = Modifier
-            .border(width = Dp.Hairline, color = Color.Black, shape = RoundedCornerShape(10.dp))
+            .border(width = Dp.Hairline, color = Color.Black, shape = roundedCornerShape)
             .width(width)
-            .clip(RoundedCornerShape((10.dp)))
-            .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(10.dp))
+            .clip(roundedCornerShape)
+            .background(Color.White.copy(alpha = 0.7f), roundedCornerShape)
     ) {
         for (i in 0 until buttonTextList.size) {
             InternalCustomButton(
@@ -136,7 +138,7 @@ fun CircularProgressIndicator(
                 color = Color.Green,
                 trackColor = Color.Red,
                 strokeWidth = strokeWidth,
-                strokeCap = StrokeCap.Round,
+                strokeCap = StrokeCap.Butt,
                 progress = {animatedProgress},
                 gapSize = 0.dp
             )
@@ -152,13 +154,13 @@ fun CircularProgressIndicator(
                         Text(
                             text = "$animatedFirstInt  ",
                             fontSize = percentageFontSize,
-                            color = Color.Green
+                            color = present
                         )
 
                         Text(
                             text = "$animatedSecondInt",
                             fontSize = percentageFontSize,
-                            color = Color.Red
+                            color = absent
                         )
                     }
                 }

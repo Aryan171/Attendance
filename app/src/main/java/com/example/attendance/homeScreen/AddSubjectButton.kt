@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -35,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.attendance.database.Subject
+import com.example.attendance.ui.theme.roundedCornerShape
 import com.example.attendance.viewModel.AttendanceViewModel
 
 @Composable
@@ -111,7 +111,7 @@ fun AddSubjectDialog(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
                 contentColor = MaterialTheme.colorScheme.onSurface
             ),
-            shape = RoundedCornerShape(10.dp)
+            shape = roundedCornerShape
         ) {
             Column(
                 modifier = Modifier

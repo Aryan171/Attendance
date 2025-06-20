@@ -12,13 +12,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Close
 import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Done
 import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,6 +40,9 @@ import androidx.compose.ui.window.PopupProperties
 import com.example.attendance.attendanceUiElements.ButtonColumn
 import com.example.attendance.attendanceUiElements.CircularProgressIndicator
 import com.example.attendance.database.Subject
+import com.example.attendance.ui.theme.absent
+import com.example.attendance.ui.theme.present
+import com.example.attendance.ui.theme.roundedCornerShape
 import com.example.attendance.viewModel.AttendanceViewModel
 import java.time.LocalDate
 
@@ -48,7 +51,7 @@ import java.time.LocalDate
 fun SubjectCard(
     subject: Subject,
     viewModel: AttendanceViewModel,
-    onClick: (subject: Subject) -> Unit
+    onClick: (Subject) -> Unit
 ) {
     var showPopup by remember { mutableStateOf(false) }
     var rowHeight by remember { mutableIntStateOf(0) }
@@ -68,13 +71,13 @@ fun SubjectCard(
     val backGroundColor =
         if (presentToday != null) {
             if (presentToday) {
-                Color(212, 255, 143, 255)
+                present
             } else {
-                Color(255, 128, 128, 255)
+                absent
             }
         }
         else {
-            Color(236, 236, 236, 255)
+            MaterialTheme.colorScheme.inversePrimary
         }
 
     // Popup which appears on long press
@@ -93,7 +96,7 @@ fun SubjectCard(
         modifier = Modifier
             .padding(top = 10.dp, start = 10.dp, end = 10.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(roundedCornerShape)
             .background(backGroundColor)
             .combinedClickable(
                 onClick = { onClick(subject) },
