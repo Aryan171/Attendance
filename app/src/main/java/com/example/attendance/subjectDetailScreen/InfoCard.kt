@@ -1,0 +1,47 @@
+package com.example.attendance.subjectDetailScreen
+
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.attendance.AttendanceUiElements.InternalCircularProgressIndicator
+import com.example.attendance.database.Subject
+import com.example.attendance.viewModel.AttendanceViewModel
+import java.time.Month
+
+@Composable
+fun InfoBox(
+    subject: Subject,
+    month: Month,
+    year: Int,
+    viewModel: AttendanceViewModel
+) {
+    Row {
+        InternalCircularProgressIndicator(
+            modifier = Modifier
+                .weight(1f)
+                .padding(5.dp),
+            bottomText = "Monthly Attendance",
+            intPair = Pair(
+                viewModel.presentDaysInMonth(subject, month, year),
+                viewModel.absentDaysInMonth(subject, month, year)
+            ),
+            percentageFontSize = 50.sp,
+            strokeWidth = 10.dp,
+            progress = viewModel.getAttendanceRatio(subject, month, year)
+        )
+
+        InternalCircularProgressIndicator(
+            modifier = Modifier
+                .weight(1f)
+                .padding(5.dp),
+            bottomText = "Total Attendance",
+            intPair = Pair(subject.presentDays, subject.absentDays),
+            percentageFontSize = 50.sp,
+            strokeWidth = 10.dp,
+            progress = viewModel.getAttendanceRatio(subject)
+        )
+    }
+}

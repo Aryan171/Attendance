@@ -13,7 +13,7 @@ import androidx.room.Room
 import com.example.attendance.database.SubjectDatabase
 import com.example.attendance.homeScreen.HomeScreen
 import com.example.attendance.subjectDetailScreen.SubjectDetailScreen
-import com.example.attendance.ui.theme.AttendanceTheme
+import com.example.attendance.ui.theme.AppTheme
 import com.example.attendance.viewModel.AttendanceViewModel
 
 class MainActivity : ComponentActivity() {
@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
             val viewModelFactory = AttendanceViewModel.Factory
             val viewModel by viewModels<AttendanceViewModel>{viewModelFactory}
 
-            AttendanceTheme {
+            AppTheme {
                 NavHost(
                     navController = navController,
                     startDestination = HomeScreen,
