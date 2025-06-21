@@ -8,6 +8,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.attendance.attendanceUiElements.CircularProgressIndicator
 import com.example.attendance.database.Subject
+import com.example.attendance.ui.theme.absent
+import com.example.attendance.ui.theme.present
 import com.example.attendance.viewModel.AttendanceViewModel
 import java.time.Month
 
@@ -30,7 +32,9 @@ fun InfoBox(
             ),
             percentageFontSize = 50.sp,
             strokeWidth = 10.dp,
-            progress = viewModel.getAttendanceRatio(subject, month, year)
+            progress = viewModel.getAttendanceRatio(subject, month, year),
+            color = present,
+            trackColor = absent
         )
 
         CircularProgressIndicator(
@@ -41,7 +45,9 @@ fun InfoBox(
             intPair = Pair(subject.presentDays, subject.absentDays),
             percentageFontSize = 50.sp,
             strokeWidth = 10.dp,
-            progress = viewModel.getAttendanceRatio(subject)
+            progress = viewModel.getAttendanceRatio(subject),
+            color = present,
+            trackColor = absent
         )
     }
 }

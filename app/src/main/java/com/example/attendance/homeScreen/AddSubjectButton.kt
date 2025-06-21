@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.attendance.database.Subject
-import com.example.attendance.ui.theme.roundedCornerShape
+import com.example.attendance.ui.theme.mediumRoundedCornerShape
 import com.example.attendance.viewModel.AttendanceViewModel
 
 @Composable
@@ -65,8 +65,7 @@ fun AddSubjectButton(
     ) {
         Icon(
             imageVector = Icons.Default.Add,
-            contentDescription = "add subject",
-            tint = MaterialTheme.colorScheme.onPrimary
+            contentDescription = "add subject"
         )
     }
 }
@@ -107,11 +106,7 @@ fun AddSubjectDialog(
                 .fillMaxWidth()
                 .height(250.dp)
                 .padding(10.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                contentColor = MaterialTheme.colorScheme.onSurface
-            ),
-            shape = roundedCornerShape
+            shape = mediumRoundedCornerShape
         ) {
             Column(
                 modifier = Modifier

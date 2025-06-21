@@ -7,22 +7,28 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.twotone.Close
-import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Done
 import androidx.compose.material.icons.twotone.Refresh
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -30,19 +36,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
-import com.example.attendance.attendanceUiElements.ButtonColumn
 import com.example.attendance.attendanceUiElements.CircularProgressIndicator
 import com.example.attendance.database.Subject
 import com.example.attendance.ui.theme.absent
+import com.example.attendance.ui.theme.buttonAbsent
+import com.example.attendance.ui.theme.buttonPresent
 import com.example.attendance.ui.theme.present
-import com.example.attendance.ui.theme.roundedCornerShape
+import com.example.attendance.ui.theme.smallRoundedCornerShape
 import com.example.attendance.viewModel.AttendanceViewModel
 import java.time.LocalDate
 
@@ -53,22 +57,19 @@ fun SubjectCard(
     viewModel: AttendanceViewModel,
     onClick: (Subject) -> Unit
 ) {
-    var showPopup by remember { mutableStateOf(false) }
-    var rowHeight by remember { mutableIntStateOf(0) }
-
+    var showDropdownMenu by remember {mutableStateOf(false)}
+    val cardPaddingValues = PaddingValues(10.dp, 10.dp, 10.dp)
+    val dropdownMenuOffset = DpOffset(10.dp, 10.dp)
     val maxIconButtonSize = 50.dp
     val maxIconButtonPadding = 5.dp
-
     val currentDate = LocalDate.now()
-
     val presentToday: Boolean? =
         if (currentDate in subject.attendance) {
             subject.attendance[currentDate]
         } else {
             null
         }
-
-    val backGroundColor =
+    val backgroundColor =
         if (presentToday != null) {
             if (presentToday) {
                 present
@@ -77,113 +78,142 @@ fun SubjectCard(
             }
         }
         else {
-            MaterialTheme.colorScheme.inversePrimary
+            Color.Unspecified
         }
 
-    // Popup which appears on long press
-    if (showPopup) {
-        ResetDeletePopup(
-            subject = subject,
-            offset = IntOffset(0, rowHeight),
-            viewModel = viewModel,
-            hidePopup = {
-                showPopup = false
-            },
-        )
-    }
-
-    Row(
-        modifier = Modifier
-            .padding(top = 10.dp, start = 10.dp, end = 10.dp)
-            .fillMaxWidth()
-            .clip(roundedCornerShape)
-            .background(backGroundColor)
-            .combinedClickable(
-                onClick = { onClick(subject) },
-                onLongClick = {
-                    showPopup = true
-                }
-            )
-            .onGloballyPositioned(
-                onGloballyPositioned = {
-                    rowHeight = it.size.height
-                }
-            )
-            .padding(5.dp)
-        ,
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = subject.name,
-            color = Color.Black
-        )
-
-        Row (
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+    Box {
+        DropdownMenu(
+            offset = dropdownMenuOffset,
+            shape = smallRoundedCornerShape,
+            expanded = showDropdownMenu,
+            onDismissRequest = { showDropdownMenu = false }
         ) {
-            Row (
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+            DropdownMenuItem(
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Outlined.Refresh,
+                        contentDescription = "delete subject",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                },
+                text = { Text("Reset") },
+                onClick = {
+                    viewModel.clearAttendance(subject)
+                    showDropdownMenu = false
+                }
+            )
+
+            DropdownMenuItem(
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Outlined.Delete,
+                        contentDescription = "delete subject",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                },
+                text = {
+                    Text(text = "Delete")
+                       },
+                onClick = {
+                    viewModel.deleteSubject(subject)
+                    showDropdownMenu = false
+                }
+            )
+        }
+
+        Card(
+            modifier = Modifier
+                .padding(cardPaddingValues)
+                .fillMaxWidth()
+                .clip(smallRoundedCornerShape)
+                .combinedClickable(
+                    onClick = { onClick(subject) },
+                    onLongClick = {
+                        showDropdownMenu = true
+                    }
+                ),
+            colors = CardDefaults.cardColors(
+                containerColor = backgroundColor
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(5.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // absent button
-                SubjectCardIconButton(
-                    maxSize = maxIconButtonSize,
-                    maxPadding = maxIconButtonPadding,
-                    showButton = presentToday == null || presentToday,
-                    onClick = {
-                        viewModel.markAbsent(subject, currentDate)
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.TwoTone.Close,
-                        contentDescription = "Absent",
-                        tint = Color.Red
-                    )
-                }
+                Text(
+                    modifier = Modifier.padding(start = 10.dp),
+                    text = subject.name
+                )
 
-                // clear button
-                SubjectCardIconButton(
-                    maxSize = maxIconButtonSize,
-                    maxPadding = maxIconButtonPadding,
-                    showButton = presentToday != null,
-                    onClick = {
-                        viewModel.clearAttendance(subject, currentDate)
-                    }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.TwoTone.Refresh,
-                        contentDescription = "Clear",
-                        tint = Color.Black
-                    )
-                }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        // absent button
+                        SubjectCardIconButton(
+                            maxSize = maxIconButtonSize,
+                            maxPadding = maxIconButtonPadding,
+                            showButton = presentToday == null || presentToday,
+                            onClick = {
+                                viewModel.markAbsent(subject, currentDate)
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.TwoTone.Close,
+                                contentDescription = "Absent"
+                            )
+                        }
 
-                // present button
-                SubjectCardIconButton(
-                    maxSize = maxIconButtonSize,
-                    maxPadding = maxIconButtonPadding,
-                    showButton = presentToday == null || !presentToday,
-                    onClick = {
-                        viewModel.markPresent(subject, currentDate)
+                        // clear button
+                        SubjectCardIconButton(
+                            maxSize = maxIconButtonSize,
+                            maxPadding = maxIconButtonPadding,
+                            showButton = presentToday != null,
+                            onClick = {
+                                viewModel.clearAttendance(subject, currentDate)
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.TwoTone.Refresh,
+                                contentDescription = "Clear"
+                            )
+                        }
+
+                        // present button
+                        SubjectCardIconButton(
+                            maxSize = maxIconButtonSize,
+                            maxPadding = maxIconButtonPadding,
+                            showButton = presentToday == null || !presentToday,
+                            onClick = {
+                                viewModel.markPresent(subject, currentDate)
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.TwoTone.Done,
+                                contentDescription = "Present"
+                            )
+                        }
                     }
-                ) {
-                    Icon(
-                        imageVector = Icons.TwoTone.Done,
-                        contentDescription = "Present",
-                        tint = Color.Green
+
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .size(40.dp),
+                        bottomText = null,
+                        percentageFontSize = 15.sp,
+                        strokeWidth = 2.dp,
+                        progress = viewModel.getAttendanceRatio(subject),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        trackColor = Color.Transparent
                     )
                 }
             }
-
-            CircularProgressIndicator(
-                modifier = Modifier
-                    .size(40.dp),
-                bottomText = null,
-                percentageFontSize = 15.sp,
-                strokeWidth = 2.dp,
-                progress = viewModel.getAttendanceRatio(subject)
-            )
         }
     }
 }
@@ -226,38 +256,5 @@ fun SubjectCardIconButton(
         ) {
             icon()
         }
-    }
-}
-
-@Composable
-fun ResetDeletePopup(
-    subject: Subject,
-    offset: IntOffset,
-    viewModel: AttendanceViewModel,
-    hidePopup: () -> Unit
-) {
-
-    Popup(
-        offset = offset,
-        onDismissRequest = hidePopup,
-        properties = PopupProperties(focusable = true)
-    ) {
-        ButtonColumn(
-            hidePopup = hidePopup,
-            hidePopupOnButtonPress = true,
-            width = 125.dp,
-            iconList = listOf(
-                Icons.TwoTone.Refresh,
-                Icons.TwoTone.Delete
-            ),
-            buttonTextList = listOf(
-                "Reset",
-                "Delete"
-            ),
-            onClickList = listOf(
-                { viewModel.resetAttendance(subject) },
-                { viewModel.deleteSubject(subject) }
-            )
-        )
     }
 }

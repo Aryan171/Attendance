@@ -36,7 +36,7 @@ class AttendanceViewModel(
     private val _subjectList = mutableStateListOf<Subject>()
     val subjectList = _subjectList
 
-    fun resetAttendance(subject: Subject) {
+    fun clearAttendance(subject: Subject) {
         updateSubject(subject.copy(
             presentDays = 0,
             absentDays = 0,

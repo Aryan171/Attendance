@@ -219,3 +219,5 @@ val surfaceContainerHighestDarkHighContrast = Color(0xFF4A473D)
 
 val present =  Color(0xFF4EB451)
 val absent = Color(0xFFF44336)
+val buttonPresent = Color(0xFF4CAF50)
+val buttonAbsent = Color(0xFFFF5722)

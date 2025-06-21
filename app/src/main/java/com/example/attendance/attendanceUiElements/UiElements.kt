@@ -1,8 +1,12 @@
 package com.example.attendance.attendanceUiElements
 
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateInt
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,7 +35,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.example.attendance.ui.theme.absent
 import com.example.attendance.ui.theme.present
-import com.example.attendance.ui.theme.roundedCornerShape
+import com.example.attendance.ui.theme.mediumRoundedCornerShape
 
 @Composable
 fun ButtonColumn(
@@ -44,10 +48,10 @@ fun ButtonColumn(
 ) {
     Column (
         modifier = Modifier
-            .border(width = Dp.Hairline, color = Color.Black, shape = roundedCornerShape)
+            .border(width = Dp.Hairline, color = Color.Black, shape = mediumRoundedCornerShape)
             .width(width)
-            .clip(roundedCornerShape)
-            .background(Color.White.copy(alpha = 0.7f), roundedCornerShape)
+            .clip(mediumRoundedCornerShape)
+            .background(Color.White.copy(alpha = 0.7f), mediumRoundedCornerShape)
     ) {
         for (i in 0 until buttonTextList.size) {
             InternalCustomButton(
@@ -102,17 +106,22 @@ fun CircularProgressIndicator(
     intPair: Pair<Int, Int>? = null,
     percentageFontSize: TextUnit,
     strokeWidth: Dp,
-    progress: Float
+    progress: Float,
+    color: Color,
+    trackColor: Color
 ) {
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress,
-        animationSpec = tween(durationMillis = 500)
+    val transition = updateTransition(
+        targetState = progress,
+        label = "progress transition"
     )
 
-    val animatedPercentage by animateIntAsState(
-        targetValue = (progress * 100).toInt(),
-        animationSpec = tween(durationMillis = 500)
-    )
+    val animatedProgress by transition.animateFloat (
+        transitionSpec = { tween(durationMillis = 500) }
+    ) { it }
+
+    val animatedPercentage by transition.animateInt (
+        transitionSpec = { tween(durationMillis = 500) }
+    ) { (it * 100f).toInt() }
 
     val animatedFirstInt by animateIntAsState(
         targetValue = intPair?.first ?: 0,
@@ -135,8 +144,8 @@ fun CircularProgressIndicator(
             CircularProgressIndicator(
                 modifier = Modifier
                     .aspectRatio(1f),
-                color = Color.Green,
-                trackColor = Color.Red,
+                color = color,
+                trackColor = trackColor,
                 strokeWidth = strokeWidth,
                 strokeCap = StrokeCap.Butt,
                 progress = {animatedProgress},

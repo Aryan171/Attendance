@@ -15,8 +15,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import com.example.attendance.ui.theme.roundedCornerShape
+import com.example.attendance.ui.theme.mediumRoundedCornerShape
 import com.example.attendance.viewModel.AttendanceViewModel
 import java.time.LocalDate
 
@@ -76,7 +75,7 @@ fun HomeScreenTopBar(
             DropdownMenu (
                 expanded = showDropdownMenu,
                 onDismissRequest = { showDropdownMenu = false },
-                shape = roundedCornerShape
+                shape = mediumRoundedCornerShape
             ) {
                 for (i in 0 until textList.size) {
                     DropdownMenuItem(
