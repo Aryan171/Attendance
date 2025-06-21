@@ -1,7 +1,10 @@
 package com.example.attendance.homeScreen
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -68,17 +71,18 @@ fun SubjectCard(
         } else {
             null
         }
-    val backgroundColor =
-        if (presentToday != null) {
+    val backgroundColor by animateColorAsState(
+        targetValue = if (presentToday != null) {
             if (presentToday) {
                 present
             } else {
                 absent
             }
-        }
-        else {
-            Color.Unspecified
-        }
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant
+        },
+        animationSpec = tween(durationMillis = 500)
+    )
 
     Box {
         DropdownMenu(
@@ -138,7 +142,7 @@ fun SubjectCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp),
+                    .padding(start = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -146,7 +150,7 @@ fun SubjectCard(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                    horizontalArrangement = Arrangement.End
                 ) {
                     // absent button
                     SubjectCardIconButton(
@@ -163,21 +167,6 @@ fun SubjectCard(
                         )
                     }
 
-                    // clear button
-                    SubjectCardIconButton(
-                        maxSize = maxIconButtonSize,
-                        maxPadding = maxIconButtonPadding,
-                        showButton = presentToday != null,
-                        onClick = {
-                            viewModel.clearAttendance(subject, currentDate)
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.TwoTone.Refresh,
-                            contentDescription = "Clear"
-                        )
-                    }
-
                     // present button
                     SubjectCardIconButton(
                         maxSize = maxIconButtonSize,
@@ -190,6 +179,21 @@ fun SubjectCard(
                         Icon(
                             imageVector = Icons.TwoTone.Done,
                             contentDescription = "Present"
+                        )
+                    }
+
+                    // clear button
+                    SubjectCardIconButton(
+                        maxSize = maxIconButtonSize,
+                        maxPadding = maxIconButtonPadding,
+                        showButton = presentToday != null,
+                        onClick = {
+                            viewModel.clearAttendance(subject, currentDate)
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.TwoTone.Refresh,
+                            contentDescription = "Clear"
                         )
                     }
 

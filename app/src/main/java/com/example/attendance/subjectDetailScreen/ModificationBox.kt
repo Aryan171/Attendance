@@ -64,17 +64,7 @@ fun ModificationBox(
             }
         }
 
-        ModificationBoxButton(
-            visible = date != null && showModificationButtons && value != null,
-            text = "Clear",
-            maxButtonHeight = maxButtonHeight,
-            maxButtonWidth = maxButtonWidth
-        ) {
-            if (date != null) {
-                viewModel.clearAttendance(subject, date)
-            }
-        }
-
+        // present button
         ModificationBoxButton(
             visible = date != null && showModificationButtons && value != true,
             text = "Mark Present",
@@ -86,6 +76,19 @@ fun ModificationBox(
             }
         }
 
+        // clear button
+        ModificationBoxButton(
+            visible = date != null && showModificationButtons && value != null,
+            text = "Clear",
+            maxButtonHeight = maxButtonHeight,
+            maxButtonWidth = maxButtonWidth
+        ) {
+            if (date != null) {
+                viewModel.clearAttendance(subject, date)
+            }
+        }
+
+        // reset button
         ModificationBoxButton(
             visible = showResetButton,
             text = "Reset",
