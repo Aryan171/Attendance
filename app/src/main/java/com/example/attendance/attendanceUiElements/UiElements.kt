@@ -1,8 +1,6 @@
 package com.example.attendance.attendanceUiElements
 
-import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateInt
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -35,69 +33,6 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.example.attendance.ui.theme.absent
 import com.example.attendance.ui.theme.present
-import com.example.attendance.ui.theme.mediumRoundedCornerShape
-
-@Composable
-fun ButtonColumn(
-    hidePopupOnButtonPress: Boolean = true,
-    hidePopup: () -> Unit,
-    width: Dp,
-    iconList: List<ImageVector>? = null,
-    buttonTextList: List<String>,
-    onClickList: List<() -> Unit>
-) {
-    Column (
-        modifier = Modifier
-            .border(width = Dp.Hairline, color = Color.Black, shape = mediumRoundedCornerShape)
-            .width(width)
-            .clip(mediumRoundedCornerShape)
-            .background(Color.White.copy(alpha = 0.7f), mediumRoundedCornerShape)
-    ) {
-        for (i in 0 until buttonTextList.size) {
-            InternalCustomButton(
-                text = buttonTextList[i],
-                imageVector = iconList?.get(i)
-            ) {
-                onClickList[i]()
-                if (hidePopupOnButtonPress) {
-                    hidePopup()
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun InternalCustomButton(
-    text: String,
-    imageVector: ImageVector? = null,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .clickable {
-                onClick()
-            }
-            .border(width = Dp.Hairline, color = Color.Black, shape = RectangleShape)
-            .fillMaxWidth()
-            .background(Color.Transparent)
-            .padding(15.dp),
-        horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (imageVector != null) {
-            Icon(
-                imageVector = imageVector,
-                contentDescription = text
-            )
-        }
-
-        Text(
-            text = text,
-            modifier = Modifier.background(Color.Transparent)
-        )
-    }
-}
 
 @Composable
 fun CircularProgressIndicator(

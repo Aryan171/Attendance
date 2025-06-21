@@ -1,6 +1,8 @@
 package com.example.attendance.homeScreen
 
+import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,7 +22,6 @@ import androidx.compose.material.icons.twotone.Close
 import androidx.compose.material.icons.twotone.Done
 import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -43,8 +44,6 @@ import androidx.compose.ui.unit.sp
 import com.example.attendance.attendanceUiElements.CircularProgressIndicator
 import com.example.attendance.database.Subject
 import com.example.attendance.ui.theme.absent
-import com.example.attendance.ui.theme.buttonAbsent
-import com.example.attendance.ui.theme.buttonPresent
 import com.example.attendance.ui.theme.present
 import com.example.attendance.ui.theme.smallRoundedCornerShape
 import com.example.attendance.viewModel.AttendanceViewModel
@@ -139,72 +138,65 @@ fun SubjectCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(5.dp),
+                    .padding(horizontal = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    modifier = Modifier.padding(start = 10.dp),
-                    text = subject.name
-                )
+                Text(subject.name)
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
+                    // absent button
+                    SubjectCardIconButton(
+                        maxSize = maxIconButtonSize,
+                        maxPadding = maxIconButtonPadding,
+                        showButton = presentToday == null || presentToday,
+                        onClick = {
+                            viewModel.markAbsent(subject, currentDate)
+                        }
                     ) {
-                        // absent button
-                        SubjectCardIconButton(
-                            maxSize = maxIconButtonSize,
-                            maxPadding = maxIconButtonPadding,
-                            showButton = presentToday == null || presentToday,
-                            onClick = {
-                                viewModel.markAbsent(subject, currentDate)
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.TwoTone.Close,
-                                contentDescription = "Absent"
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.TwoTone.Close,
+                            contentDescription = "Absent"
+                        )
+                    }
 
-                        // clear button
-                        SubjectCardIconButton(
-                            maxSize = maxIconButtonSize,
-                            maxPadding = maxIconButtonPadding,
-                            showButton = presentToday != null,
-                            onClick = {
-                                viewModel.clearAttendance(subject, currentDate)
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.TwoTone.Refresh,
-                                contentDescription = "Clear"
-                            )
+                    // clear button
+                    SubjectCardIconButton(
+                        maxSize = maxIconButtonSize,
+                        maxPadding = maxIconButtonPadding,
+                        showButton = presentToday != null,
+                        onClick = {
+                            viewModel.clearAttendance(subject, currentDate)
                         }
+                    ) {
+                        Icon(
+                            imageVector = Icons.TwoTone.Refresh,
+                            contentDescription = "Clear"
+                        )
+                    }
 
-                        // present button
-                        SubjectCardIconButton(
-                            maxSize = maxIconButtonSize,
-                            maxPadding = maxIconButtonPadding,
-                            showButton = presentToday == null || !presentToday,
-                            onClick = {
-                                viewModel.markPresent(subject, currentDate)
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.TwoTone.Done,
-                                contentDescription = "Present"
-                            )
+                    // present button
+                    SubjectCardIconButton(
+                        maxSize = maxIconButtonSize,
+                        maxPadding = maxIconButtonPadding,
+                        showButton = presentToday == null || !presentToday,
+                        onClick = {
+                            viewModel.markPresent(subject, currentDate)
                         }
+                    ) {
+                        Icon(
+                            imageVector = Icons.TwoTone.Done,
+                            contentDescription = "Present"
+                        )
                     }
 
                     CircularProgressIndicator(
                         modifier = Modifier
-                            .size(40.dp),
+                            .size(maxIconButtonSize)
+                            .padding(maxIconButtonPadding),
                         bottomText = null,
                         percentageFontSize = 15.sp,
                         strokeWidth = 2.dp,
@@ -227,21 +219,26 @@ fun SubjectCardIconButton(
     icon: @Composable () -> Unit
 ) {
 
-    val animatedSize by animateDpAsState(
-        targetValue = if (showButton) {
+    val transition = updateTransition(
+        targetState = showButton,
+        label = "showButtonTransition"
+    )
+
+    val animatedSize by transition.animateDp {
+        if (it) {
             maxSize
         } else {
             0.dp
         }
-    )
+    }
 
-    val animatedPadding by animateDpAsState(
-        targetValue = if (showButton) {
+    val animatedPadding by transition.animateDp {
+        if (it) {
             maxPadding
         } else {
             0.dp
         }
-    )
+    }
 
     if (animatedSize > 0.dp) {
         Box(

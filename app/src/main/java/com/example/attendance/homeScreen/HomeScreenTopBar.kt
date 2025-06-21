@@ -5,6 +5,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -14,7 +15,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
+import com.example.attendance.R
 import com.example.attendance.ui.theme.mediumRoundedCornerShape
 import com.example.attendance.viewModel.AttendanceViewModel
 import java.time.LocalDate
@@ -25,12 +28,23 @@ fun HomeScreenTopBar(
     viewModel: AttendanceViewModel
 ) {
     var showDropdownMenu by remember {mutableStateOf(false)}
+    var showSortByDropdownMenu by remember {mutableStateOf(false)}
 
     val currentDate = LocalDate.now()
-    val textList = remember { listOf(
+
+    val dropdownMenuTextList = remember { listOf(
         "Set all Present Today",
         "Set all Absent Today",
-        "Reset all attendance for today",
+        "Reset all attendance for today"
+    ) }
+
+    val dropdownMenuOnClickList = remember { listOf(
+        { viewModel.setAllPresent(currentDate) },
+        { viewModel.setAllAbsent(currentDate) },
+        {viewModel.clearAllAttendance(currentDate)}
+    )}
+
+    val sortByDropdownMenuTextList = remember { listOf(
         "Sort by Name",
         "Sort by most attended percent",
         "Sort by least attended percent",
@@ -40,10 +54,7 @@ fun HomeScreenTopBar(
         "Sort by least absent days"
     ) }
 
-    val onClickList = remember { listOf(
-        { viewModel.setAllPresent(currentDate) },
-        { viewModel.setAllAbsent(currentDate) },
-        {viewModel.clearAllAttendance(currentDate)},
+    val sortByDropdownMenuOnClickList = remember { listOf(
         {viewModel.sortSubjectListBy{a, b ->
             a.name.compareTo(b.name)
         }},
@@ -77,15 +88,47 @@ fun HomeScreenTopBar(
                 onDismissRequest = { showDropdownMenu = false },
                 shape = mediumRoundedCornerShape
             ) {
-                for (i in 0 until textList.size) {
+                for (i in 0 until dropdownMenuTextList.size) {
                     DropdownMenuItem(
-                        text = {
-                            Text(textList[i])
-                        },
-                        onClick = onClickList[i]
+                        text = { Text(dropdownMenuTextList[i]) },
+                        onClick = {
+                            dropdownMenuOnClickList[i]()
+                            showDropdownMenu = false
+                        }
+                    )
+                }
+
+                HorizontalDivider()
+
+                DropdownMenuItem(
+                    text = { Text("Sort by") },
+                    trailingIcon = {
+                        Icon (
+                            painter = painterResource(R.drawable.swap_vert_24dp_e3e3e3_fill0_wght400_grad0_opsz24),
+                            contentDescription = "sort by"
+                        )
+                    },
+                    onClick = { showSortByDropdownMenu = true }
+                )
+            }
+
+            DropdownMenu (
+                expanded = showSortByDropdownMenu,
+                onDismissRequest = { showSortByDropdownMenu = false },
+                shape = mediumRoundedCornerShape
+            ) {
+                for (i in 0 until sortByDropdownMenuTextList.size) {
+                    DropdownMenuItem(
+                        text = { Text(sortByDropdownMenuTextList[i]) },
+                        onClick = {
+                            sortByDropdownMenuOnClickList[i]()
+                            showSortByDropdownMenu = false
+                            showDropdownMenu = false
+                        }
                     )
                 }
             }
+
             IconButton(
                 onClick = {
                     showDropdownMenu = true
