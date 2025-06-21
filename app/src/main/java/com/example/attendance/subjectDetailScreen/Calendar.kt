@@ -48,12 +48,6 @@ fun Calendar(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        Text(
-            text = "${month.name.substring(0, 3)} $year",
-            fontSize = 30.sp,
-            color = Color.Black
-        )
-
         Spacer(modifier = Modifier.height(5.dp))
 
         WeekDays()
@@ -92,13 +86,23 @@ fun MonthGrid(
                 boxSize = with(density) { it.size.width.toDp() / 7 }
             }
     ) {
-        (0 until 6).forEach { week ->
+        var week = 0
+        while (day.month.equalToOrisPreviousMonthOf(month)) {
             Row (
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(boxSize)
             ) {
-                (0 until 7).forEach { dayOfWeek ->
+                for (it in 0 until 7) {
+                    if (day.month.value != month.value) {
+                        Box(
+                            modifier = Modifier.size(boxSize)
+                        )
+
+                        day = day.plusDays(1)
+                        continue
+                    }
+
                     val value = subject.attendance[day]
 
                     val boxSelected: Boolean = selectedDate != null &&
@@ -146,8 +150,16 @@ fun MonthGrid(
                     day = day.plusDays(1)
                 }
             }
+            week++
         }
     }
+}
+
+/**
+ *returns true if the provided month is equal to this month or is the previous month
+ */
+fun Month.equalToOrisPreviousMonthOf(month: Month): Boolean {
+    return month.value == this.value || this.value % 12 == month.value - 1
 }
 
 fun getFirstDayOfGrid(month: Month, year: Int): LocalDate {
