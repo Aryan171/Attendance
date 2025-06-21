@@ -28,7 +28,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.attendance.database.Subject
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -176,23 +175,15 @@ fun getFirstDayOfGrid(month: Month, year: Int): LocalDate {
 fun WeekDays() {
     val density = LocalDensity.current
 
-    var textWidth by remember { mutableStateOf(0.dp) }
-
     Row (
         modifier = Modifier
             .fillMaxWidth()
-            .onGloballyPositioned(
-                onGloballyPositioned = {
-                    textWidth = with(density) { it.size.width.toDp() / 7 }
-                }
-            )
     ) {
         for (day in DayOfWeek.entries) {
             Text(
+                modifier = Modifier.weight(1f),
                 text = day.name.substring(0, 3),
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .width(textWidth)
+                textAlign = TextAlign.Center
             )
         }
     }

@@ -1,13 +1,18 @@
 package com.example.attendance.subjectDetailScreen
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,18 +51,20 @@ fun ModificationBox(
                 rowWidth = with(density) { it.size.width.toDp() }
             }
         ,
-        horizontalArrangement = Arrangement.SpaceEvenly ,
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         val value = subject.attendance[date]
         val maxButtonHeight = 50.dp
-        val maxButtonWidth = (rowWidth - 20.dp) / 3
+        val maxButtonPadding = 2.dp
+        val maxButtonWidth = rowWidth / 3 - maxButtonPadding * 2
 
         ModificationBoxButton(
             visible = date != null && showModificationButtons && value != false,
             text = "Mark Absent",
             maxButtonHeight = maxButtonHeight,
-            maxButtonWidth = maxButtonWidth
+            maxButtonWidth = maxButtonWidth,
+            maxButtonPadding = maxButtonPadding
         ) {
             if (date != null) {
                 viewModel.markAbsent(subject, date)
@@ -69,7 +76,8 @@ fun ModificationBox(
             visible = date != null && showModificationButtons && value != true,
             text = "Mark Present",
             maxButtonHeight = maxButtonHeight,
-            maxButtonWidth = maxButtonWidth
+            maxButtonWidth = maxButtonWidth,
+            maxButtonPadding = maxButtonPadding
         ) {
             if (date != null) {
                 viewModel.markPresent(subject, date)
@@ -81,7 +89,8 @@ fun ModificationBox(
             visible = date != null && showModificationButtons && value != null,
             text = "Clear",
             maxButtonHeight = maxButtonHeight,
-            maxButtonWidth = maxButtonWidth
+            maxButtonWidth = maxButtonWidth,
+            maxButtonPadding = maxButtonPadding
         ) {
             if (date != null) {
                 viewModel.clearAttendance(subject, date)
@@ -94,7 +103,8 @@ fun ModificationBox(
             text = "Reset",
             onClick = onReset,
             maxButtonHeight = maxButtonHeight,
-            maxButtonWidth = maxButtonWidth
+            maxButtonWidth = maxButtonWidth,
+            maxButtonPadding = maxButtonPadding
         )
     }
 }
@@ -105,40 +115,58 @@ fun ModificationBoxButton(
     text: String,
     maxButtonHeight: Dp,
     maxButtonWidth: Dp,
+    maxButtonPadding: Dp,
     onClick: () -> Unit
 ) {
-    val animatedHeight by animateDpAsState(
-        targetValue = if (visible) {
+    var transition = updateTransition(
+        targetState = visible,
+        label = "buttonVisibleTransition"
+    )
+
+    val animatedHeight by transition.animateDp (
+        transitionSpec = {tween(500)}
+    ) {
+        if (it) {
             maxButtonHeight
         } else {
             0.dp
-        },
-        animationSpec = tween(500)
-    )
+        }
+    }
 
-    val animatedWidth by animateDpAsState(
-        targetValue = if (visible) {
+    val animatedWidth by transition.animateDp (
+        transitionSpec = {tween(500)}
+    ) {
+        if (it) {
             maxButtonWidth
         } else {
             0.dp
-        },
-        animationSpec = tween(500)
-    )
+        }
+    }
+
+    val animatedPadding by transition.animateDp (
+        transitionSpec = {tween(500)}
+    ) {
+        if (it) {
+            maxButtonPadding
+        } else {
+            0.dp
+        }
+    }
 
     if (animatedWidth > 0.dp) {
-        OutlinedButton(
+        Box (
             modifier = Modifier
-                .size(animatedWidth, animatedHeight)
-                .animateContentSize(),
-            onClick = onClick,
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = Color.Black
-            )
+                .padding(horizontal = animatedPadding)
         ) {
-            if (animatedWidth > maxButtonWidth - 10.dp) {
-                Text(
-                    text = text
-                )
+            FilledTonalButton(
+                modifier = Modifier
+                    .size(animatedWidth, animatedHeight)
+                    .animateContentSize(),
+                onClick = onClick
+            ) {
+                if (animatedWidth > maxButtonWidth - 5.dp) {
+                    Text(text = text)
+                }
             }
         }
     }
