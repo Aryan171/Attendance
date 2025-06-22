@@ -56,12 +56,12 @@ fun ModificationBox(
     ) {
         val value = subject.attendance[date]
         val maxButtonHeight = 50.dp
-        val maxButtonPadding = 2.dp
+        val maxButtonPadding = 5.dp
         val maxButtonWidth = rowWidth / 3 - maxButtonPadding * 2
 
         ModificationBoxButton(
             visible = date != null && showModificationButtons && value != false,
-            text = "Mark Absent",
+            text = "Absent",
             maxButtonHeight = maxButtonHeight,
             maxButtonWidth = maxButtonWidth,
             maxButtonPadding = maxButtonPadding
@@ -74,7 +74,7 @@ fun ModificationBox(
         // present button
         ModificationBoxButton(
             visible = date != null && showModificationButtons && value != true,
-            text = "Mark Present",
+            text = "Present",
             maxButtonHeight = maxButtonHeight,
             maxButtonWidth = maxButtonWidth,
             maxButtonPadding = maxButtonPadding

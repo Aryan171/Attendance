@@ -32,7 +32,7 @@ fun InfoBox(
             ),
             percentageFontSize = 50.sp,
             strokeWidth = 10.dp,
-            progress = viewModel.getAttendanceRatio(subject, month, year),
+            progress = viewModel.attendanceRatio(subject, month, year),
             color = present,
             trackColor = absent
         )
@@ -45,7 +45,7 @@ fun InfoBox(
             intPair = Pair(subject.presentDays, subject.absentDays),
             percentageFontSize = 50.sp,
             strokeWidth = 10.dp,
-            progress = viewModel.getAttendanceRatio(subject),
+            progress = viewModel.attendanceRatio(subject),
             color = present,
             trackColor = absent
         )

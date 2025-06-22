@@ -14,6 +14,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.Month
+import kotlin.math.ceil
+import kotlin.math.floor
 
 class AttendanceViewModel(
     private val dao: SubjectDao
@@ -139,7 +141,7 @@ class AttendanceViewModel(
         }
     }
 
-    fun getAttendanceRatio(subject: Subject, month: Month, year: Int): Float {
+    fun attendanceRatio(subject: Subject, month: Month, year: Int): Float {
         var day = LocalDate.of(year, month, 1)
         var absentDays = 0.0f
         var presentDays = 0.0f
@@ -161,7 +163,7 @@ class AttendanceViewModel(
         }
     }
 
-    fun getAttendanceRatio(subject: Subject): Float {
+    fun attendanceRatio(subject: Subject): Float {
         val totalDays = subject.absentDays + subject.presentDays
 
         return if (totalDays == 0) {
@@ -221,5 +223,39 @@ class AttendanceViewModel(
         }
 
         return res
+    }
+
+    /**
+     * Calculates the attendance buffer for a subject.
+     * The attendance buffer is the number of classes a student can miss or must attend
+     * to maintain a minimum required attendance ratio (currently 75%).
+     *
+     * If the current attendance ratio is below the minimum:
+     *  - The function returns a negative integer. The absolute value of this integer
+     *    represents the number of consecutive classes the student **must attend**
+     *    to reach the minimum required attendance.
+     *
+     * If the current attendance ratio is at or above the minimum:
+     *  - The function returns a positive integer. This integer represents the number of
+     *    consecutive classes the student **can miss** and still maintain the minimum
+     *    required attendance.
+     *
+     * @param subject The subject for which to calculate the attendance buffer.
+     * @return An integer representing the attendance buffer.
+     *         Negative if below minimum, positive if at or above minimum.
+     */
+    fun attendanceBuffer(subject: Subject): Int {
+        val minimumRequiredAttendanceRatio = 0.75
+        return if (attendanceRatio(subject) < minimumRequiredAttendanceRatio) {
+            val presents = (minimumRequiredAttendanceRatio * (subject.presentDays + subject.absentDays)
+            - subject.presentDays) / (1 - minimumRequiredAttendanceRatio)
+
+            -ceil(presents).toInt()
+        } else {
+            val absents = (subject.presentDays / minimumRequiredAttendanceRatio) -
+            subject.absentDays - subject.presentDays
+
+            floor(absents).toInt()
+        }
     }
 }

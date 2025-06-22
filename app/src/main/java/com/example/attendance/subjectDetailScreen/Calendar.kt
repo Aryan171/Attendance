@@ -1,5 +1,7 @@
 package com.example.attendance.subjectDetailScreen
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,8 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,8 +28,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.attendance.database.Subject
+import com.example.attendance.ui.theme.absent
+import com.example.attendance.ui.theme.present
+import com.example.attendance.ui.theme.smallRoundedCornerShape
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.Month
@@ -77,6 +82,7 @@ fun MonthGrid(
     var boxSize by remember { mutableStateOf(50.dp) }
 
     var day = getFirstDayOfGrid(month, year)
+    val currentDate = LocalDate.now()
 
     Column(
         modifier = Modifier
@@ -86,7 +92,7 @@ fun MonthGrid(
             }
     ) {
         var week = 0
-        while (day.month.equalToOrisPreviousMonthOf(month)) {
+        while (day.month.equalToOrIsPreviousMonthOf(month)) {
             Row (
                 modifier = Modifier
                     .fillMaxWidth()
@@ -103,47 +109,27 @@ fun MonthGrid(
                     }
 
                     val value = subject.attendance[day]
+                    var dayCopy = LocalDate.of(day.year, day.month, day.dayOfMonth)
 
-                    val boxSelected: Boolean = selectedDate != null &&
-                            selectedDate.dayOfMonth == day.dayOfMonth &&
-                            selectedDate.month == day.month
-
-                    val boxColor = if (value != null) {
-                        if (value) {
-                            Color.Green
+                    DayCard(
+                        size = boxSize,
+                        color = if (value != null) {
+                            if (value) {
+                                present
+                            } else {
+                                absent
+                            }
+                        } else if (day == currentDate) {
+                            MaterialTheme.colorScheme.primaryContainer
                         } else {
-                            Color.Red
-                        }
-                    } else {
-                        Color.White
-                    }
-
-                    val dayCopy = LocalDate.of(day.year, day.month, day.dayOfMonth)
-
-                    Box (
-                        modifier = Modifier
-                            .size(boxSize)
-                            .padding(2.dp)
-                            .border(
-                                width = 1.dp,
-                                color = if (boxSelected) {
-                                    Color.Black
-                                } else {
-                                    Color.Transparent
-                                },
-                                shape = CircleShape
-                            )
-                            .background(boxColor, shape = CircleShape)
-                            .clip(CircleShape)
-                            .clickable(
-                                onClick = { dayClicked(dayCopy) }
-                            ),
-                        contentAlignment = Alignment.Center
+                            MaterialTheme.colorScheme.surface
+                        },
+                        day = day,
+                        selected = selectedDate != null &&
+                                selectedDate.dayOfMonth == day.dayOfMonth &&
+                                selectedDate.month == day.month
                     ) {
-                        Text(
-                            text = day.dayOfMonth.toString(),
-                            color = Color.Black
-                        )
+                        dayClicked(dayCopy)
                     }
 
                     day = day.plusDays(1)
@@ -154,10 +140,47 @@ fun MonthGrid(
     }
 }
 
+@Composable
+fun DayCard(
+    size: Dp,
+    color: Color,
+    day: LocalDate,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val animatedColor by animateColorAsState(
+        targetValue = color,
+        animationSpec = tween(500)
+    )
+
+    Box (
+        modifier = Modifier
+            .size(size)
+            .padding(1.dp)
+            .border(
+                width = 1.dp,
+                color = if (selected) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    Color.Transparent
+                },
+                shape = smallRoundedCornerShape
+            )
+            .background(animatedColor, shape = smallRoundedCornerShape)
+            .clip(smallRoundedCornerShape)
+            .clickable(
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(day.dayOfMonth.toString())
+    }
+}
+
 /**
  *returns true if the provided month is equal to this month or is the previous month
  */
-fun Month.equalToOrisPreviousMonthOf(month: Month): Boolean {
+fun Month.equalToOrIsPreviousMonthOf(month: Month): Boolean {
     return month.value == this.value || this.value % 12 == month.value - 1
 }
 
@@ -173,8 +196,6 @@ fun getFirstDayOfGrid(month: Month, year: Int): LocalDate {
 
 @Composable
 fun WeekDays() {
-    val density = LocalDensity.current
-
     Row (
         modifier = Modifier
             .fillMaxWidth()

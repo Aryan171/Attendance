@@ -1,16 +1,20 @@
 package com.example.attendance.homeScreen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.example.attendance.database.Subject
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.serialization.Serializable
@@ -56,6 +60,13 @@ fun HomeScreen(
                         subject = it,
                         viewModel = viewModel,
                         onClick = subjectCardOnClick
+                    )
+                }
+
+                // empty space at the end so that the end element can be seen properly
+                item {
+                    Box(
+                        modifier = Modifier.height(100.dp)
                     )
                 }
             }

@@ -59,10 +59,10 @@ fun HomeScreenTopBar(
             a.name.compareTo(b.name)
         }},
         {viewModel.sortSubjectListBy{a, b ->
-            viewModel.getAttendanceRatio(b).compareTo(viewModel.getAttendanceRatio(a))
+            viewModel.attendanceRatio(b).compareTo(viewModel.attendanceRatio(a))
         }},
         {viewModel.sortSubjectListBy{a, b ->
-            viewModel.getAttendanceRatio(a).compareTo(viewModel.getAttendanceRatio(b))
+            viewModel.attendanceRatio(a).compareTo(viewModel.attendanceRatio(b))
         }},
         {viewModel.sortSubjectListBy{a, b ->
             b.presentDays.compareTo(a.presentDays)
