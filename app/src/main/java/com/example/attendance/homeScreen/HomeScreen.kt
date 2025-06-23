@@ -25,7 +25,7 @@ fun HomeScreen(
     viewModel: AttendanceViewModel,
     subjectCardOnClick: (subject: Subject) -> Unit
 ) {
-    val subjectList = viewModel._subjectList
+    val subjectList = viewModel.subjectList
     Scaffold(
         topBar = {HomeScreenTopBar(viewModel)},
         floatingActionButton = {

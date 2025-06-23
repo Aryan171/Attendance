@@ -8,6 +8,8 @@ import com.example.attendance.database.Subject
 import com.example.attendance.database.SubjectDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -24,8 +26,7 @@ class AttendanceViewModel(
         loadSubjectList()
     }
 
-    val _subjectList = mutableStateListOf<Subject>()
-    val subjectList = _subjectList
+    val subjectList = mutableStateListOf<Subject>()
 
     val minimumRequiredAttendanceRatio = preferencesRepository.getMinimumRequiredAttendanceRatio()
         .stateIn(
@@ -110,7 +111,7 @@ class AttendanceViewModel(
             val generatedId = withContext(Dispatchers.IO) {
                 dao.insertSubjectAndGetId(subject)
             }
-            _subjectList.add(subject.copy(id = generatedId) )
+            subjectList.add(subject.copy(id = generatedId) )
         }
     }
 
@@ -118,10 +119,10 @@ class AttendanceViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             dao.update(subject)
         }
-        val index = _subjectList.indexOfFirst { it.id == subject.id }
+        val index = subjectList.indexOfFirst { it.id == subject.id }
 
         if (index != -1) {
-            _subjectList[index] = subject
+            subjectList[index] = subject
         }
     }
 
@@ -129,15 +130,15 @@ class AttendanceViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             dao.delete(subject)
         }
-        _subjectList.removeIf {
+        subjectList.removeIf {
             it.id == subject.id
         }
     }
 
     fun loadSubjectList() {
         viewModelScope.launch(Dispatchers.IO) {
-            _subjectList.clear()
-            _subjectList.addAll(dao.getAllSubjects())
+            subjectList.clear()
+            subjectList.addAll(dao.getAllSubjects())
         }
     }
 
@@ -174,19 +175,19 @@ class AttendanceViewModel(
     }
 
     fun setAllPresent(date: LocalDate) {
-        for(subject in _subjectList) {
+        for(subject in subjectList) {
             markPresent(subject, date)
         }
     }
 
     fun setAllAbsent(date: LocalDate) {
-        for(subject in _subjectList) {
+        for(subject in subjectList) {
             markAbsent(subject, date)
         }
     }
 
     fun clearAllAttendance(date: LocalDate) {
-        for(subject in _subjectList) {
+        for(subject in subjectList) {
             clearAttendance(subject, date)
         }
     }
@@ -194,7 +195,7 @@ class AttendanceViewModel(
     fun sortSubjectListBy(
         comparator: (Subject, Subject) -> Int
     ) {
-        _subjectList.sortWith(comparator)
+        subjectList.sortWith(comparator)
     }
 
     fun presentDaysInMonth(subject: Subject, month: Month, year: Int): Int {
@@ -251,17 +252,24 @@ class AttendanceViewModel(
      * @return An integer representing the attendance buffer.
      *         Negative if below minimum, positive if at or above minimum.
      */
-    fun attendanceBuffer(subject: Subject): Int {
-        return if (attendanceRatio(subject) < minimumRequiredAttendanceRatio.value) {
-            val presents = (minimumRequiredAttendanceRatio.value * (subject.presentDays + subject.absentDays)
-            - subject.presentDays) / (1 - minimumRequiredAttendanceRatio.value)
+    fun attendanceBuffer(subject: Subject): StateFlow<Int> {
+        return minimumRequiredAttendanceRatio.map { ratio->
+            if (attendanceRatio(subject) < ratio) {
+                val presents =
+                    (ratio * (subject.presentDays + subject.absentDays)
+                            - subject.presentDays) / (1 - ratio)
 
-            -ceil(presents).toInt()
-        } else {
-            val absents = (subject.presentDays / minimumRequiredAttendanceRatio.value) -
-            subject.absentDays - subject.presentDays
+                -ceil(presents).toInt()
+            } else {
+                val absents = (subject.presentDays / ratio) -
+                        subject.absentDays - subject.presentDays
 
-            floor(absents).toInt()
-        }
+                floor(absents).toInt()
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0
+        )
     }
 }

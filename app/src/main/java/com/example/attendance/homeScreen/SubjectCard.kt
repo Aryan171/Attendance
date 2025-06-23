@@ -1,10 +1,10 @@
 package com.example.attendance.homeScreen
 
-import androidx.compose.material3.AlertDialog
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.expandVertically
@@ -25,23 +25,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.twotone.Close
 import androidx.compose.material.icons.twotone.Done
 import androidx.compose.material.icons.twotone.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,7 +54,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.attendance.attendanceUiElements.CircularProgressIndicator
 import com.example.attendance.database.Subject
 import com.example.attendance.ui.theme.absent
@@ -96,36 +92,30 @@ fun SubjectCard(
         animationSpec = tween(durationMillis = 500)
     )
 
-    Card(
+    Column (
         modifier = Modifier
             .animateContentSize()
             .padding(cardPaddingValues)
-            .fillMaxWidth()
+            .background(color = MaterialTheme.colorScheme.surfaceVariant, smallRoundedCornerShape)
             .clip(smallRoundedCornerShape)
             // closing the details card when clicking on the card
             .combinedClickable(
-                onClick = {
-                    if (showDetailedCardView) {
-                        showDetailedCardView = false
-                    } else {
-                        onClick(subject)
-                    }
-                },
-                onLongClick = {
-                    showDetailedCardView = !showDetailedCardView
-                },
-                onDoubleClick = {
-                    showDetailedCardView = !showDetailedCardView
-                }
+                onClick = { showDetailedCardView = false },
+                onLongClick = { showDetailedCardView = false },
+                onDoubleClick = { showDetailedCardView = false }
             ),
-        colors = CardDefaults.cardColors(
-            containerColor = backgroundColor
-        )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 10.dp),
+                .background(backgroundColor, smallRoundedCornerShape)
+                .clip(smallRoundedCornerShape)
+                .combinedClickable (
+                    onClick = { onClick(subject) },
+                    onLongClick = { showDetailedCardView = !showDetailedCardView },
+                    onDoubleClick = { showDetailedCardView = !showDetailedCardView }
+                )
+                .padding(start = 20.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -192,7 +182,7 @@ fun SubjectCard(
             }
         }
 
-        AnimatedVisibility (
+        AnimatedVisibility(
             visible = showDetailedCardView,
             enter = expandVertically(
                 expandFrom = Alignment.Top
@@ -206,7 +196,6 @@ fun SubjectCard(
                 viewModel = viewModel
             )
         }
-
     }
 }
 
@@ -216,20 +205,21 @@ fun SubjectDetails(
     viewModel: AttendanceViewModel
 ) {
     Column (
-        modifier = Modifier
-            .animateContentSize()
-            .background(MaterialTheme.colorScheme.tertiaryContainer, smallRoundedCornerShape)
-            .clip(smallRoundedCornerShape)
-            .padding(vertical = 10.dp),
+        modifier = Modifier.padding(vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        val attendanceBuffer = viewModel.attendanceBuffer(subject)
+        val attendanceBuffer by viewModel.attendanceBuffer(subject).collectAsState()
+
+        val animatedAttendanceBuffer by animateIntAsState(
+            targetValue = attendanceBuffer,
+            animationSpec = tween(durationMillis = 500)
+        )
 
         if (attendanceBuffer < 0) {
             Text(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
-                text = "Must attend ${-attendanceBuffer} " +
+                text = "Must attend ${-animatedAttendanceBuffer} " +
                         if (attendanceBuffer == -1) {"class"} else {"classes"},
                 color = absent
             )
@@ -237,7 +227,7 @@ fun SubjectDetails(
             Text(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
-                text = "Can miss : $attendanceBuffer " +
+                text = "Can miss : $animatedAttendanceBuffer " +
                         if (attendanceBuffer == 1) {"class"} else {"classes"},
                 color = present
             )
@@ -246,7 +236,7 @@ fun SubjectDetails(
         Row (
             modifier = Modifier
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.SpaceAround
         ) {
             Text("Total ${subject.presentDays + subject.absentDays}")
 
@@ -478,66 +468,27 @@ fun ModificationBox(
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.SpaceAround
         ) {
             // rename button
-            FilledTonalButton(
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
+            TextButton (
                 onClick = { showRenameDialog = true }
             ) {
-                Row (
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "rename",
-                        tint = Color.Yellow
-                    )
-
-                    Text(text = "Rename", color = MaterialTheme.colorScheme.onPrimary)
-                }
+                Text(text = "Rename")
             }
 
             // reset button
-            FilledTonalButton(
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
+            TextButton (
                 onClick = { showResetDialog = true }
             ) {
-                Row (
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "reset",
-                        tint = Color.Red
-                    )
-
-                    Text(text = "Reset", color = MaterialTheme.colorScheme.onPrimary)
-                }
+                Text(text = "Reset")
             }
 
             // delete button
-            FilledTonalButton(
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
+            TextButton(
                 onClick = { showDeleteDialog = true }
             ) {
-                Row (
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "delete",
-                        tint = Color.Red
-                    )
-
-                    Text(text = "Delete", color = MaterialTheme.colorScheme.onPrimary)
-                }
+                Text(text = "Delete")
             }
         }
     }

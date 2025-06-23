@@ -7,7 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.compose.NavHost
@@ -40,12 +39,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
 
-            val viewModelFactory: ViewModelProvider.Factory = viewModelFactory {
-                initializer {
-                    AttendanceViewModel(db.subjectDao(), PreferencesRepository(this@MainActivity))
+            val viewModel by viewModels<AttendanceViewModel>{
+                viewModelFactory {
+                    initializer {
+                        AttendanceViewModel(db.subjectDao(), PreferencesRepository(this@MainActivity))
+                    }
                 }
             }
-            val viewModel by viewModels<AttendanceViewModel>{viewModelFactory}
 
             AppTheme {
                 NavHost(
@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
                             subjectCardOnClick = { subject->
                                 navController.navigate(
                                     SubjectDetailScreen(
-                                        subjectIndex = viewModel._subjectList.indexOfFirst {
+                                        subjectIndex = viewModel.subjectList.indexOfFirst {
                                             it.id == subject.id
                                         }
                                     )
@@ -86,7 +86,7 @@ class MainActivity : ComponentActivity() {
                         val subjectDetailScreen: SubjectDetailScreen = it.toRoute()
 
                         SubjectDetailScreen(
-                            subject = viewModel._subjectList[subjectDetailScreen.subjectIndex],
+                            subject = viewModel.subjectList[subjectDetailScreen.subjectIndex],
                             viewModel = viewModel,
                             onBackPress = {
                                 navController.navigate(HomeScreen) {
