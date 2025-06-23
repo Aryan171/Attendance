@@ -225,6 +225,11 @@ class AttendanceViewModel(
         return res
     }
 
+    fun renameSubject(subject: Subject, name: String) {
+        updateSubject(subject.copy(name = name))
+
+    }
+
     /**
      * Calculates the attendance buffer for a subject.
      * The attendance buffer is the number of classes a student can miss or must attend
