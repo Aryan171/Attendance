@@ -1,26 +1,48 @@
 package com.example.attendance.homeScreen
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.attendance.R
 import com.example.attendance.ui.theme.mediumRoundedCornerShape
 import com.example.attendance.viewModel.AttendanceViewModel
 import java.time.LocalDate
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,6 +51,9 @@ fun HomeScreenTopBar(
 ) {
     var showDropdownMenu by remember {mutableStateOf(false)}
     var showSortByDropdownMenu by remember {mutableStateOf(false)}
+    var showChangeMinimumAttendanceDialog by remember { mutableStateOf(false) }
+
+    val minimumRequiredAttendanceRatio by viewModel.minimumRequiredAttendanceRatio.collectAsState()
 
     val currentDate = LocalDate.now()
 
@@ -83,50 +108,15 @@ fun HomeScreenTopBar(
             Text("Attendance", maxLines = 1, overflow = TextOverflow.Ellipsis)
         },
         actions = {
-            DropdownMenu (
-                expanded = showDropdownMenu,
-                onDismissRequest = { showDropdownMenu = false },
-                shape = mediumRoundedCornerShape
-            ) {
-                for (i in 0 until dropdownMenuTextList.size) {
-                    DropdownMenuItem(
-                        text = { Text(dropdownMenuTextList[i]) },
-                        onClick = {
-                            dropdownMenuOnClickList[i]()
-                            showDropdownMenu = false
-                        }
-                    )
+            IconButton(
+                onClick = {
+                    showChangeMinimumAttendanceDialog = true
                 }
-
-                HorizontalDivider()
-
-                DropdownMenuItem(
-                    text = { Text("Sort by") },
-                    trailingIcon = {
-                        Icon (
-                            painter = painterResource(R.drawable.swap_vert_24dp_e3e3e3_fill0_wght400_grad0_opsz24),
-                            contentDescription = "sort by"
-                        )
-                    },
-                    onClick = { showSortByDropdownMenu = true }
+            ) {
+                Text(
+                    text = (minimumRequiredAttendanceRatio * 100f).roundToInt().toString() + "%",
+                    fontSize = MaterialTheme.typography.bodyMedium.fontSize
                 )
-            }
-
-            DropdownMenu (
-                expanded = showSortByDropdownMenu,
-                onDismissRequest = { showSortByDropdownMenu = false },
-                shape = mediumRoundedCornerShape
-            ) {
-                for (i in 0 until sortByDropdownMenuTextList.size) {
-                    DropdownMenuItem(
-                        text = { Text(sortByDropdownMenuTextList[i]) },
-                        onClick = {
-                            sortByDropdownMenuOnClickList[i]()
-                            showSortByDropdownMenu = false
-                            showDropdownMenu = false
-                        }
-                    )
-                }
             }
 
             IconButton(
@@ -139,6 +129,182 @@ fun HomeScreenTopBar(
                     contentDescription = "open menu"
                 )
             }
+
+            TopBarDropdownMenu(
+                expanded = showDropdownMenu,
+                dropdownMenuTextList = dropdownMenuTextList,
+                dropdownMenuOnClickList = dropdownMenuOnClickList,
+                showSortByDropdownMenu = { showSortByDropdownMenu = true },
+                hideDropdownMenu = { showDropdownMenu = false }
+            )
+
+            SortByDropdownMenu(
+                expanded = showSortByDropdownMenu,
+                hideDropdownMenu = { showSortByDropdownMenu = false },
+                dropdownMenuTextList = sortByDropdownMenuTextList,
+                dropdownMenuOnClickList = sortByDropdownMenuOnClickList
+            )
+
+            if (showChangeMinimumAttendanceDialog) {
+                ChangeMinimumAttendanceDialog(
+                    showDialog = showChangeMinimumAttendanceDialog,
+                    viewModel = viewModel,
+                    hideDialog = { showChangeMinimumAttendanceDialog = false }
+                )
+            }
         }
     )
+}
+
+@Composable
+fun ChangeMinimumAttendanceDialog(
+    showDialog: Boolean,
+    viewModel: AttendanceViewModel,
+    hideDialog: () -> Unit
+) {
+    if (!showDialog) {
+        return
+    }
+
+    var minimumAttendance by remember {
+        mutableStateOf("")
+    }
+
+    val setMinimumAttendance = {
+        try {
+            val minimumRequiredAttendanceRatio = minimumAttendance.toFloat() / 100f
+            if (minimumRequiredAttendanceRatio !in 0f..100f) {
+                throw Exception("number not in range")
+            }
+            viewModel.setMinimumRequiredAttendanceRatio(minimumRequiredAttendanceRatio)
+            hideDialog()
+        } catch (_: Exception) {
+            minimumAttendance = ""
+        }
+    }
+
+    Dialog(
+        onDismissRequest = hideDialog,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        Surface (
+            modifier = Modifier.padding(10.dp),
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = AlertDialogDefaults.TonalElevation
+        ) {
+            Column(
+                modifier = Modifier.padding(vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Minimum required attendance",
+                    style = MaterialTheme.typography.titleLarge
+                )
+
+                OutlinedTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp),
+                    shape = CircleShape,
+                    value = minimumAttendance,
+                    onValueChange = {
+                        minimumAttendance = it
+                    },
+                    label = {
+                        Text(text = "Change minimum attendance")
+                    },
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Done,
+                        keyboardType = KeyboardType.Number
+                    ),
+                    keyboardActions = KeyboardActions { setMinimumAttendance() }
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    FilledTonalButton(
+                        onClick = hideDialog
+                    ) {
+                        Text(text = "Cancel")
+                    }
+
+                    FilledTonalButton(
+                        onClick = setMinimumAttendance
+                    ) {
+                        Text(text = "Change")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SortByDropdownMenu(
+    expanded: Boolean,
+    hideDropdownMenu: () -> Unit,
+    dropdownMenuTextList: List<String>,
+    dropdownMenuOnClickList: List<() -> Unit>
+) {
+    DropdownMenu (
+        expanded = expanded,
+        onDismissRequest = hideDropdownMenu,
+        shape = mediumRoundedCornerShape
+    ) {
+        for (i in 0 until dropdownMenuTextList.size) {
+            DropdownMenuItem(
+                text = { Text(dropdownMenuTextList[i]) },
+                onClick = {
+                    dropdownMenuOnClickList[i]()
+                    hideDropdownMenu()
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun TopBarDropdownMenu(
+    expanded: Boolean,
+    dropdownMenuTextList: List<String>,
+    dropdownMenuOnClickList: List<() -> Unit>,
+    showSortByDropdownMenu: () -> Unit,
+    hideDropdownMenu: () -> Unit
+) {
+    DropdownMenu (
+        expanded = expanded,
+        onDismissRequest = hideDropdownMenu,
+        shape = mediumRoundedCornerShape
+    ) {
+        for (i in 0 until dropdownMenuTextList.size) {
+            DropdownMenuItem(
+                text = { Text(dropdownMenuTextList[i]) },
+                onClick = {
+                    dropdownMenuOnClickList[i]()
+                    hideDropdownMenu()
+                }
+            )
+        }
+
+        HorizontalDivider()
+
+        DropdownMenuItem(
+            text = { Text("Sort by") },
+            trailingIcon = {
+                Icon (
+                    painter = painterResource(R.drawable.swap_vert_24dp_e3e3e3_fill0_wght400_grad0_opsz24),
+                    contentDescription = "sort by"
+                )
+            },
+            onClick = showSortByDropdownMenu
+        )
+    }
 }
