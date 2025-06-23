@@ -91,14 +91,13 @@ fun MonthGrid(
                 boxSize = with(density) { it.size.width.toDp() / 7 }
             }
     ) {
-        var week = 0
         while (day.month.equalToOrIsPreviousMonthOf(month)) {
             Row (
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(boxSize)
             ) {
-                for (it in 0 until 7) {
+                for (it in 0..6) {
                     if (day.month.value != month.value) {
                         Box(
                             modifier = Modifier.size(boxSize)
@@ -122,7 +121,7 @@ fun MonthGrid(
                         } else if (day == currentDate) {
                             MaterialTheme.colorScheme.primaryContainer
                         } else {
-                            MaterialTheme.colorScheme.surface
+                            Color.Transparent
                         },
                         day = day,
                         selected = selectedDate != null &&
@@ -135,7 +134,6 @@ fun MonthGrid(
                     day = day.plusDays(1)
                 }
             }
-            week++
         }
     }
 }

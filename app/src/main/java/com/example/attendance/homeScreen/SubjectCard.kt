@@ -1,5 +1,6 @@
 package com.example.attendance.homeScreen
 
+import androidx.compose.material3.AlertDialog
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
@@ -21,23 +22,26 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.twotone.Close
 import androidx.compose.material.icons.twotone.Done
 import androidx.compose.material.icons.twotone.Refresh
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ComposeCompilerApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,11 +50,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.attendance.attendanceUiElements.CircularProgressIndicator
 import com.example.attendance.database.Subject
 import com.example.attendance.ui.theme.absent
@@ -103,7 +110,7 @@ fun SubjectCard(
                     } else {
                         onClick(subject)
                     }
-                          },
+                },
                 onLongClick = {
                     showDetailedCardView = !showDetailedCardView
                 },
@@ -187,8 +194,12 @@ fun SubjectCard(
 
         AnimatedVisibility (
             visible = showDetailedCardView,
-            enter = expandVertically(),
-            exit = shrinkVertically()
+            enter = expandVertically(
+                expandFrom = Alignment.Top
+            ),
+            exit = shrinkVertically(
+                shrinkTowards = Alignment.Top
+            )
         ) {
             SubjectDetails(
                 subject = subject,
@@ -207,7 +218,7 @@ fun SubjectDetails(
     Column (
         modifier = Modifier
             .animateContentSize()
-            .background(MaterialTheme.colorScheme.surfaceVariant, smallRoundedCornerShape)
+            .background(MaterialTheme.colorScheme.tertiaryContainer, smallRoundedCornerShape)
             .clip(smallRoundedCornerShape)
             .padding(vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -248,6 +259,286 @@ fun SubjectDetails(
                 text = "Absent ${subject.absentDays}",
                 color = absent
             )
+        }
+
+        ModificationBox(
+            subject = subject,
+            viewModel = viewModel
+        )
+    }
+}
+
+@Composable
+fun DeleteDialog(
+    subject: Subject,
+    viewModel: AttendanceViewModel,
+    hideDialog: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = hideDialog,
+        confirmButton =  {
+            FilledTonalButton(
+                onClick = {
+                    viewModel.deleteSubject(subject)
+                    hideDialog()
+                }
+            ) {
+                Text(text = "Delete")
+            }
+        },
+        dismissButton = {
+            FilledTonalButton(
+                onClick = {
+                    hideDialog()
+                }
+            ) {
+                Text(text = "Cancel")
+            }
+        },
+        title = {
+            Text(
+                text = "Delete ${subject.name}?",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Text(
+                text = "Are you sure you want to delete ${subject.name}? " +
+                    "This action cannot be undone",
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    )
+}
+
+@Composable
+fun ResetDialog(
+    subject: Subject,
+    viewModel: AttendanceViewModel,
+    hideDialog: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = hideDialog,
+        confirmButton =  {
+            FilledTonalButton(
+                onClick = {
+                    viewModel.clearAttendance(subject)
+                    hideDialog()
+                }
+            ) {
+                Text(text = "Reset")
+            }
+        },
+        dismissButton = {
+            FilledTonalButton(
+                onClick = {
+                    hideDialog()
+                }
+            ) {
+                Text(text = "Cancel")
+            }
+        },
+        title = {
+            Text(
+                text = "Reset ${subject.name}?",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Text(
+                text = "Are you sure you want to reset ${subject.name}? " +
+                        "This action cannot be undone",
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    )
+}
+
+@Composable
+fun RenameDialog(
+    subject: Subject,
+    viewModel: AttendanceViewModel,
+    hideDialog: () -> Unit,
+) {
+    var subjectName by remember {
+        mutableStateOf("")
+    }
+
+    val renameSubject = {
+        val name = subjectName
+        subjectName = ""
+        if (name.isNotBlank()) {
+            viewModel.renameSubject(subject, name.trim())
+            hideDialog()
+        }
+    }
+
+    Dialog(
+        onDismissRequest = hideDialog,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        Surface (
+            modifier = Modifier.padding(10.dp),
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = AlertDialogDefaults.TonalElevation
+        ) {
+            Column(
+                modifier = Modifier.padding(vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Rename ${subject.name}",
+                    style = MaterialTheme.typography.titleLarge
+                )
+
+                OutlinedTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp),
+                    shape = CircleShape,
+                    value = subjectName,
+                    onValueChange = {
+                        subjectName = it
+                    },
+                    label = {
+                        Text(text = "Rename")
+                    },
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Go
+                    ),
+                    keyboardActions = KeyboardActions { renameSubject() }
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    FilledTonalButton(
+                        onClick = hideDialog
+                    ) {
+                        Text(text = "Cancel")
+                    }
+
+                    FilledTonalButton(
+                        onClick = renameSubject
+                    ) {
+                        Text(text = "Rename")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ModificationBox(
+    subject: Subject,
+    viewModel: AttendanceViewModel
+) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var showResetDialog by remember { mutableStateOf(false) }
+
+    Box {
+        if (showDeleteDialog) {
+            DeleteDialog(
+                subject = subject,
+                viewModel = viewModel
+            ) {
+                showDeleteDialog = false
+            }
+        }
+
+        if (showRenameDialog) {
+            RenameDialog(
+                subject = subject,
+                viewModel = viewModel
+            ) {
+                showRenameDialog = false
+            }
+        }
+
+        if (showResetDialog) {
+            ResetDialog(
+                subject = subject,
+                viewModel = viewModel
+            ) {
+                showResetDialog = false
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            // rename button
+            FilledTonalButton(
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                onClick = { showRenameDialog = true }
+            ) {
+                Row (
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "rename",
+                        tint = Color.Yellow
+                    )
+
+                    Text(text = "Rename", color = MaterialTheme.colorScheme.onPrimary)
+                }
+            }
+
+            // reset button
+            FilledTonalButton(
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                onClick = { showResetDialog = true }
+            ) {
+                Row (
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "reset",
+                        tint = Color.Red
+                    )
+
+                    Text(text = "Reset", color = MaterialTheme.colorScheme.onPrimary)
+                }
+            }
+
+            // delete button
+            FilledTonalButton(
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                onClick = { showDeleteDialog = true }
+            ) {
+                Row (
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "delete",
+                        tint = Color.Red
+                    )
+
+                    Text(text = "Delete", color = MaterialTheme.colorScheme.onPrimary)
+                }
+            }
         }
     }
 }
