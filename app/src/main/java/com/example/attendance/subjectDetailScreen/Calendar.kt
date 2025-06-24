@@ -97,7 +97,7 @@ fun MonthGrid(
                     .fillMaxWidth()
                     .height(boxSize)
             ) {
-                for (it in 0..6) {
+                for (i in 0..6) {
                     if (day.month.value != month.value) {
                         Box(
                             modifier = Modifier.size(boxSize)
