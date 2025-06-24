@@ -23,10 +23,15 @@ class AttendanceViewModel(
     private val dao: SubjectDao,
     private val preferencesRepository: PreferencesRepository
 ): ViewModel() {
+
+    // subjectList is declared and initialized before init block because it is being used in init
+    // block to load the subject list from the database and kotlin initializes variables, and runs
+    // the init block in textual order
+    val subjectList = mutableStateListOf<Subject>()
+
     init {
         loadSubjectList()
     }
-    val subjectList = mutableStateListOf<Subject>()
 
     val theme = preferencesRepository.getTheme()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppTheme.DYNAMIC)
