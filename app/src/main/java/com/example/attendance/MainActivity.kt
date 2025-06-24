@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.compose.NavHost
@@ -47,7 +48,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            AppTheme {
+            val theme = viewModel.theme.collectAsState()
+
+            AppTheme(
+                theme = theme.value
+            ) {
                 NavHost(
                     navController = navController,
                     startDestination = HomeScreen,

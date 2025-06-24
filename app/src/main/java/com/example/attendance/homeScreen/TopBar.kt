@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.attendance.R
+import com.example.attendance.ui.theme.AppTheme
 import com.example.attendance.ui.theme.mediumRoundedCornerShape
 import com.example.attendance.viewModel.AttendanceViewModel
 import java.time.LocalDate
@@ -52,10 +53,13 @@ fun HomeScreenTopBar(
     var showDropdownMenu by remember {mutableStateOf(false)}
     var showSortByDropdownMenu by remember {mutableStateOf(false)}
     var showChangeMinimumAttendanceDialog by remember { mutableStateOf(false) }
+    var showThemeSelectorDropDown by remember { mutableStateOf(false) }
 
     val minimumRequiredAttendanceRatio by viewModel.minimumRequiredAttendanceRatio.collectAsState()
 
     val currentDate = LocalDate.now()
+
+    val theme by viewModel.theme.collectAsState()
 
     val dropdownMenuTextList = remember { listOf(
         "Set all Present Today",
@@ -120,6 +124,34 @@ fun HomeScreenTopBar(
             }
 
             IconButton(
+                onClick = { showThemeSelectorDropDown = true }
+            ) {
+                Icon(
+                    painter = painterResource(
+                        if (theme == AppTheme.LIGHT) {
+                            R.drawable.clear_day_24dp_e3e3e3_fill0_wght400_grad0_opsz24
+                        } else if (theme == AppTheme.DARK) {
+                            R.drawable.dark_mode_24dp_e3e3e3_fill0_wght400_grad0_opsz24
+                        } else if (theme == AppTheme.SYSTEM_DEFAULT) {
+                            R.drawable.brightness_auto_24dp_e3e3e3_fill0_wght400_grad0_opsz24
+                        } else {
+                            R.drawable.water_drop_24dp_e3e3e3_fill0_wght400_grad0_opsz24
+                        }
+                    ),
+                    contentDescription =
+                        if (theme == AppTheme.LIGHT) {
+                            "light theme"
+                        } else if (theme == AppTheme.DARK) {
+                            "dark theme"
+                        } else if (theme == AppTheme.SYSTEM_DEFAULT) {
+                            "system theme"
+                        } else {
+                            "dynamic theme"
+                        }
+                )
+            }
+
+            IconButton(
                 onClick = {
                     showDropdownMenu = true
                 }
@@ -145,6 +177,12 @@ fun HomeScreenTopBar(
                 dropdownMenuOnClickList = sortByDropdownMenuOnClickList
             )
 
+            ThemeSelectorDropDown(
+                expanded = showThemeSelectorDropDown,
+                viewModel = viewModel,
+                hideDropdownMenu = { showThemeSelectorDropDown = false }
+            )
+
             if (showChangeMinimumAttendanceDialog) {
                 ChangeMinimumAttendanceDialog(
                     showDialog = showChangeMinimumAttendanceDialog,
@@ -154,6 +192,84 @@ fun HomeScreenTopBar(
             }
         }
     )
+}
+
+@Composable
+fun ThemeSelectorDropDown(
+    expanded: Boolean,
+    viewModel: AttendanceViewModel,
+    hideDropdownMenu: () -> Unit
+) {
+    val theme by viewModel.theme.collectAsState()
+    DropdownMenu (
+        expanded = expanded,
+        onDismissRequest = hideDropdownMenu,
+        shape = mediumRoundedCornerShape
+    ) {
+        if (theme != AppTheme.LIGHT) {
+            DropdownMenuItem(
+                text = { Text("Light") },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.clear_day_24dp_e3e3e3_fill0_wght400_grad0_opsz24),
+                        contentDescription = "light theme"
+                    )
+                },
+                onClick = {
+                    viewModel.setTheme(AppTheme.LIGHT)
+                    hideDropdownMenu()
+                }
+            )
+        }
+
+        if (theme != AppTheme.DARK) {
+            DropdownMenuItem(
+                text = { Text("Dark") },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.dark_mode_24dp_e3e3e3_fill0_wght400_grad0_opsz24),
+                        contentDescription = "dark theme"
+                    )
+                },
+                onClick = {
+                    viewModel.setTheme(AppTheme.DARK)
+                    hideDropdownMenu()
+                }
+            )
+        }
+
+        if (theme != AppTheme.SYSTEM_DEFAULT) {
+            DropdownMenuItem(
+                text = { Text("System") },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.brightness_auto_24dp_e3e3e3_fill0_wght400_grad0_opsz24),
+                        contentDescription = "system default"
+                    )
+                },
+                onClick = {
+                    viewModel.setTheme(AppTheme.SYSTEM_DEFAULT)
+                    hideDropdownMenu()
+                }
+            )
+        }
+
+        if (theme != AppTheme.DYNAMIC) {
+            DropdownMenuItem(
+                text = { Text("Dynamic") },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.water_drop_24dp_e3e3e3_fill0_wght400_grad0_opsz24),
+                        contentDescription = "dynamic"
+                    )
+                },
+                onClick = {
+                    viewModel.setTheme(AppTheme.DYNAMIC)
+                    hideDropdownMenu()
+                }
+            )
+        }
+    }
 }
 
 @Composable

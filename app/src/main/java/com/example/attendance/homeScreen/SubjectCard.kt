@@ -205,7 +205,8 @@ fun SubjectDetails(
     viewModel: AttendanceViewModel
 ) {
     Column (
-        modifier = Modifier.padding(vertical = 10.dp),
+        modifier = Modifier
+            .padding(vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         val attendanceBuffer by viewModel.attendanceBuffer(subject).collectAsState()
