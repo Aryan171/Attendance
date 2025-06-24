@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.attendance.Preferences.PreferencesRepository
 import com.example.attendance.database.Subject
 import com.example.attendance.database.SubjectDao
+import com.example.attendance.ui.theme.AppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,13 +26,22 @@ class AttendanceViewModel(
     init {
         loadSubjectList()
     }
-
     val subjectList = mutableStateListOf<Subject>()
+
+    val theme = preferencesRepository.getTheme()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppTheme.DYNAMIC)
+
 
     val minimumRequiredAttendanceRatio = preferencesRepository.getMinimumRequiredAttendanceRatio()
         .stateIn(
             viewModelScope, SharingStarted.WhileSubscribed(5000), 0.75f
         )
+
+    fun setTheme(theme: AppTheme) {
+        viewModelScope.launch(Dispatchers.IO) {
+            preferencesRepository.setTheme(theme)
+        }
+    }
 
     fun setMinimumRequiredAttendanceRatio(minAttendanceRatio: Float) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -230,8 +240,6 @@ class AttendanceViewModel(
         updateSubject(subject.copy(name = name))
 
     }
-
-
 
     /**
      * Calculates the attendance buffer for a subject.

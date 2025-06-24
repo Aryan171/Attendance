@@ -1,5 +1,6 @@
 package com.example.attendance.ui.theme
 
+import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -254,25 +255,42 @@ val unspecified_scheme = ColorFamily(
 
 @Composable
 fun AppTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = false,
+    theme: AppTheme,
     content: @Composable() () -> Unit
 ) {
-  val colorScheme = when {
-      dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-          val context = LocalContext.current
-          if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-      }
-      
-      darkTheme -> darkScheme
-      else -> lightScheme
-  }
 
-  MaterialTheme(
-    colorScheme = colorScheme,
-    typography = AppTypography,
-    content = content
-  )
+
+    val colorScheme = when (theme) {
+        AppTheme.LIGHT -> lightScheme
+        AppTheme.DARK -> darkScheme
+        AppTheme.DYNAMIC ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val context = LocalContext.current
+                if (isSystemInDarkTheme()) {
+                    dynamicDarkColorScheme(context)
+                } else {
+                    dynamicLightColorScheme(context)
+                }
+            } else {
+                if (isSystemInDarkTheme()) {
+                    darkScheme
+                }
+                else {
+                    lightScheme
+                }
+            }
+        AppTheme.SYSTEM_DEFAULT ->
+            if (isSystemInDarkTheme()) {
+                darkScheme
+            } else {
+                lightScheme
+            }
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = AppTypography,
+        content = content
+    )
 }
 
