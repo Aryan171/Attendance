@@ -78,30 +78,20 @@ fun SubjectDetailScreen(
                 animationSpec = tween(durationMillis = 500)
             )
 
-            if (attendanceBuffer < 0) {
-                Text(
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    text = "Must attend ${-animatedAttendanceBuffer} " +
-                            if (attendanceBuffer == -1) {"class"} else {"classes"},
-                    color = absent
-                )
-            } else if (attendanceBuffer > 0) {
-                Text(
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    text = "Can miss : $animatedAttendanceBuffer " +
-                            if (attendanceBuffer == 1) {"class"} else {"classes"},
-                    color = present
-                )
-            } else {
-                Text(
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    text = "Right on edge, don't miss any class",
-                    color = absent
-                )
-            }
+            Text(
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                text = if (attendanceBuffer < 0) {
+                    "Must attend ${-animatedAttendanceBuffer} " +
+                    if (attendanceBuffer == -1) {"class"} else {"classes"}
+                } else if (attendanceBuffer > 0) {
+                    "Can miss : $animatedAttendanceBuffer " +
+                            if (attendanceBuffer == 1) {"class"} else {"classes"}
+                } else {
+                    "Right on edge, don't miss any class"
+                },
+                color = if (animatedAttendanceBuffer <= 0) { absent } else { present }
+            )
         }
     ) { paddingValues->
         Column(
