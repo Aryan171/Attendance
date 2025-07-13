@@ -224,13 +224,20 @@ fun SubjectDetails(
                         if (attendanceBuffer == -1) {"class"} else {"classes"},
                 color = absent
             )
-        } else {
+        } else if (attendanceBuffer > 0) {
             Text(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
                 text = "Can miss : $animatedAttendanceBuffer " +
                         if (attendanceBuffer == 1) {"class"} else {"classes"},
                 color = present
+            )
+        } else {
+            Text(
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                text = "Right on edge, don't miss any class",
+                color = absent
             )
         }
 

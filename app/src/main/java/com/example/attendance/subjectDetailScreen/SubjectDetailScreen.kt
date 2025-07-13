@@ -1,6 +1,7 @@
 package com.example.attendance.subjectDetailScreen
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,7 +28,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import com.example.attendance.database.subject.SubjectUiModel
+import com.example.attendance.ui.theme.absent
+import com.example.attendance.ui.theme.present
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -43,7 +48,7 @@ fun SubjectDetailScreen(
     viewModel: AttendanceViewModel,
     onBackPress: () -> Unit
 ) {
-    var initialMonthYear = LocalDate.of(LocalDate.now().year, LocalDate.now().month, 1)
+    val initialMonthYear = LocalDate.of(LocalDate.now().year, LocalDate.now().month, 1)
     var selectedDate: LocalDate? by remember {mutableStateOf(null)}
 
     val calendarPageCount = 24000 // 2000 years
@@ -59,12 +64,45 @@ fun SubjectDetailScreen(
     val animationScope = rememberCoroutineScope()
 
     // stores the month and year value of the page that is showing currently
-    var currentMonthYear = remember (pagerState.currentPage) {
+    val currentMonthYear = remember (pagerState.currentPage) {
         initialMonthYear.addOffset(pagerState.currentPage - initialCalendarPage.toLong())
     }
 
     Scaffold (
-        topBar = {SubjectDetailScreenTopAppBar(subject, onBackPress)}
+        topBar = {SubjectDetailScreenTopAppBar(subject, onBackPress)},
+        bottomBar = {
+            val attendanceBuffer by viewModel.attendanceBuffer(subject).collectAsState()
+
+            val animatedAttendanceBuffer by animateIntAsState(
+                targetValue = attendanceBuffer,
+                animationSpec = tween(durationMillis = 500)
+            )
+
+            if (attendanceBuffer < 0) {
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    text = "Must attend ${-animatedAttendanceBuffer} " +
+                            if (attendanceBuffer == -1) {"class"} else {"classes"},
+                    color = absent
+                )
+            } else if (attendanceBuffer > 0) {
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    text = "Can miss : $animatedAttendanceBuffer " +
+                            if (attendanceBuffer == 1) {"class"} else {"classes"},
+                    color = present
+                )
+            } else {
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    text = "Right on edge, don't miss any class",
+                    color = absent
+                )
+            }
+        }
     ) { paddingValues->
         Column(
             modifier = Modifier
@@ -127,7 +165,7 @@ fun SubjectDetailScreen(
                     initialMonthYear.plusMonths(monthOffset).toString()
                 }
             ) { page ->
-                var pageMonthYear = initialMonthYear.addOffset((page - initialCalendarPage).toLong())
+                val pageMonthYear = initialMonthYear.addOffset((page - initialCalendarPage).toLong())
 
                 Calendar(
                     subject = subject,

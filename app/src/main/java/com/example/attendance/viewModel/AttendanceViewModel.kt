@@ -78,7 +78,6 @@ class AttendanceViewModel(
 
         var updatedPresentDays = subject.presentDays
         var updatedAbsentDays = subject.absentDays
-        var updatedAttendance = subject.attendance//.toMutableMap()
 
         if (subject.attendance[date] == false) {
             updatedPresentDays++
@@ -87,11 +86,11 @@ class AttendanceViewModel(
         else {
             updatedPresentDays++
         }
-        updatedAttendance[date] = true
+        subject.attendance[date] = true
         updateSubject(subject.copy(
             presentDays = updatedPresentDays,
             absentDays = updatedAbsentDays,
-            attendance = updatedAttendance
+            attendance = subject.attendance
         ))
     }
 
@@ -106,19 +105,18 @@ class AttendanceViewModel(
 
         var updatedPresentDays = subject.presentDays
         var updatedAbsentDays = subject.absentDays
-        var updatedAttendance = subject.attendance//.toMutableMap()
 
-        if (updatedAttendance[date] == true) {
+        if (subject.attendance[date] == true) {
             updatedPresentDays--
         }
-        else if (updatedAttendance[date] == false) {
+        else {
             updatedAbsentDays--
         }
-        updatedAttendance.remove(date)
+        subject.attendance.remove(date)
         updateSubject(subject.copy(
             presentDays = updatedPresentDays,
             absentDays = updatedAbsentDays,
-            attendance = updatedAttendance
+            attendance = subject.attendance
         ))
     }
 
@@ -133,20 +131,19 @@ class AttendanceViewModel(
 
         var updatedPresentDays = subject.presentDays
         var updatedAbsentDays = subject.absentDays
-        var updatedAttendance = subject.attendance//.toMutableMap()
 
-        if (updatedAttendance[date] == true) {
+        if (subject.attendance[date] == true) {
             updatedAbsentDays++
             updatedPresentDays--
         }
-        else if (updatedAttendance[date] == null){
+        else {
             updatedAbsentDays++
         }
-        updatedAttendance[date] = false
+        subject.attendance[date] = false
         updateSubject(subject.copy(
             presentDays = updatedPresentDays,
             absentDays = updatedAbsentDays,
-            attendance = updatedAttendance
+            attendance = subject.attendance
         ))
     }
 

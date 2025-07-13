@@ -108,7 +108,7 @@ fun MonthGrid(
                     }
 
                     val value = subject.attendance[day]
-                    var dayCopy = LocalDate.of(day.year, day.month, day.dayOfMonth)
+                    val dayCopy = LocalDate.of(day.year, day.month, day.dayOfMonth)
 
                     DayCard(
                         size = boxSize,

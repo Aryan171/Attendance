@@ -18,9 +18,10 @@ class DatabaseRepository(
                 subject.name,
                 attendanceDao.getNumberOfPresentDays(subject.id),
                 absentDays = attendanceDao.getNumberOfAbsentDays(subject.id),
-                attendance = attendanceDao.getAttendance(subject.id).associate { attendance ->
-                    LocalDate.parse(attendance.date) to attendance.isPresent
-                } as MutableMap<LocalDate, Boolean>
+                attendance = attendanceDao.getAttendance(subject.id)
+                    .associate { attendance ->
+                        LocalDate.parse(attendance.date) to attendance.isPresent
+                    } as MutableMap<LocalDate, Boolean>
             )
         }
 

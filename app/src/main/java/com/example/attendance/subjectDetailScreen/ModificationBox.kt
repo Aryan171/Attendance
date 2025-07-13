@@ -121,7 +121,7 @@ fun ModificationBoxButton(
     backgroundColor: Color = Color.Unspecified,
     onClick: () -> Unit
 ) {
-    var transition = updateTransition(
+    val transition = updateTransition(
         targetState = visible,
         label = "buttonVisibleTransition"
     )
