@@ -11,8 +11,8 @@ interface SubjectDao {
     @Insert
     suspend fun insertSubject(subject : Subject): Long
 
-    @Delete
-    suspend fun delete(subject : Subject)
+    @Query("DELETE FROM subject WHERE id = :subjectId")
+    suspend fun deleteBySubjectId(subjectId: Long)
 
     @Update
     suspend fun update(subject : Subject)

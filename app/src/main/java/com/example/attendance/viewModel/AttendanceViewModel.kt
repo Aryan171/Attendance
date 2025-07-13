@@ -3,9 +3,10 @@ package com.example.attendance.viewModel
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.attendance.database.DatabaseRepository
 import com.example.attendance.preferences.PreferencesRepository
 import com.example.attendance.database.subject.Subject
-import com.example.attendance.database.subject.SubjectDao
+import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.ui.theme.AppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -20,14 +21,14 @@ import kotlin.math.ceil
 import kotlin.math.floor
 
 class AttendanceViewModel(
-    private val dao: SubjectDao,
+    private val databaseRepository: DatabaseRepository,
     private val preferencesRepository: PreferencesRepository
 ): ViewModel() {
 
     // subjectList is declared and initialized before init block because it is being used in init
     // block to load the subject list from the database and kotlin initializes variables, and runs
     // the init block in textual order
-    val subjectList = mutableStateListOf<Subject>()
+    val subjectList = mutableStateListOf<SubjectUiModel>()
 
     init {
         loadSubjectList()
@@ -54,7 +55,11 @@ class AttendanceViewModel(
         }
     }
 
-    fun clearAttendance(subject: Subject) {
+    fun clearAttendance(subject: SubjectUiModel) {
+        viewModelScope.launch(Dispatchers.IO) {
+            databaseRepository.clearAllAttendance(subject.id)
+        }
+
         updateSubject(subject.copy(
             presentDays = 0,
             absentDays = 0,
@@ -62,7 +67,15 @@ class AttendanceViewModel(
         ))
     }
 
-    fun markPresent(subject: Subject, date: LocalDate) {
+    fun markPresent(subject: SubjectUiModel, date: LocalDate) {
+        if (subject.attendance[date] == true) {
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            databaseRepository.markPresent(subject.id, date)
+        }
+
         var updatedPresentDays = subject.presentDays
         var updatedAbsentDays = subject.absentDays
         var updatedAttendance = subject.attendance//.toMutableMap()
@@ -71,7 +84,7 @@ class AttendanceViewModel(
             updatedPresentDays++
             updatedAbsentDays--
         }
-        else if (subject.attendance[date] == null){
+        else {
             updatedPresentDays++
         }
         updatedAttendance[date] = true
@@ -82,7 +95,15 @@ class AttendanceViewModel(
         ))
     }
 
-    fun clearAttendance(subject: Subject, date: LocalDate) {
+    fun clearAttendance(subject: SubjectUiModel, date: LocalDate) {
+        if (subject.attendance[date] == null) {
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            databaseRepository.clearAttendance(subject.id, date)
+        }
+
         var updatedPresentDays = subject.presentDays
         var updatedAbsentDays = subject.absentDays
         var updatedAttendance = subject.attendance//.toMutableMap()
@@ -101,7 +122,15 @@ class AttendanceViewModel(
         ))
     }
 
-    fun markAbsent(subject: Subject, date: LocalDate) {
+    fun markAbsent(subject: SubjectUiModel, date: LocalDate) {
+        if (subject.attendance[date] == false) {
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            databaseRepository.markAbsent(subject.id, date)
+        }
+
         var updatedPresentDays = subject.presentDays
         var updatedAbsentDays = subject.absentDays
         var updatedAttendance = subject.attendance//.toMutableMap()
@@ -121,29 +150,45 @@ class AttendanceViewModel(
         ))
     }
 
-    fun addSubject(subject: Subject) {
+    fun addSubject(subject: SubjectUiModel) {
         viewModelScope.launch {
             val generatedId = withContext(Dispatchers.IO) {
-                dao.insertSubject(subject)
+                databaseRepository.insertSubject(subject.toSubject())
             }
             subjectList.add(subject.copy(id = generatedId) )
         }
     }
 
-    fun updateSubject(subject: Subject) {
-        viewModelScope.launch(Dispatchers.IO) {
-            dao.update(subject)
-        }
-        val index = subjectList.indexOfFirst { it.id == subject.id }
+    private fun SubjectUiModel.toSubject(): Subject {
+        return Subject(
+            id = this.id,
+            name = this.name
+        )
+    }
 
+    /**
+     * Updates the given subject in the local list. This function changes the SnapshotStateList which
+     * triggers recomposition
+     *
+     * This function finds the index of the subject in the `subjectList` based on its ID.
+     * If the subject is found (index is not -1), it replaces the existing subject
+     * at that index with the updated subject.
+     *
+     * Note: This function only modifies the local `subjectList` and does not persist
+     * changes to the database.
+     *
+     * @param subject The [SubjectUiModel] object containing the updated information for the subject.
+     */
+    fun updateSubject(subject: SubjectUiModel) {
+        val index = subjectList.indexOfFirst { it.id == subject.id }
         if (index != -1) {
             subjectList[index] = subject
         }
     }
 
-    fun deleteSubject(subject: Subject) {
+    fun deleteSubject(subject: SubjectUiModel) {
         viewModelScope.launch(Dispatchers.IO) {
-            dao.delete(subject)
+            databaseRepository.deleteSubject(subject.id)
         }
         subjectList.removeIf {
             it.id == subject.id
@@ -153,11 +198,11 @@ class AttendanceViewModel(
     fun loadSubjectList() {
         viewModelScope.launch(Dispatchers.IO) {
             subjectList.clear()
-            subjectList.addAll(dao.getAllSubjects())
+            subjectList.addAll(databaseRepository.getAllSubjects())
         }
     }
 
-    fun attendanceRatio(subject: Subject, month: Month, year: Int): Float {
+    fun attendanceRatio(subject: SubjectUiModel, month: Month, year: Int): Float {
         var day = LocalDate.of(year, month, 1)
         var absentDays = 0.0f
         var presentDays = 0.0f
@@ -179,7 +224,7 @@ class AttendanceViewModel(
         }
     }
 
-    fun attendanceRatio(subject: Subject): Float {
+    fun attendanceRatio(subject: SubjectUiModel): Float {
         val totalDays = subject.absentDays + subject.presentDays
 
         return if (totalDays == 0) {
@@ -208,12 +253,12 @@ class AttendanceViewModel(
     }
 
     fun sortSubjectListBy(
-        comparator: (Subject, Subject) -> Int
+        comparator: (SubjectUiModel, SubjectUiModel) -> Int
     ) {
         subjectList.sortWith(comparator)
     }
 
-    fun presentDaysInMonth(subject: Subject, month: Month, year: Int): Int {
+    fun presentDaysInMonth(subject: SubjectUiModel, month: Month, year: Int): Int {
         var day = LocalDate.of(year, month, 1)
         var res = 0
 
@@ -227,7 +272,7 @@ class AttendanceViewModel(
         return res
     }
 
-    fun absentDaysInMonth(subject: Subject, month: Month, year: Int): Int {
+    fun absentDaysInMonth(subject: SubjectUiModel, month: Month, year: Int): Int {
         var day = LocalDate.of(year, month, 1)
         var res = 0
 
@@ -241,9 +286,11 @@ class AttendanceViewModel(
         return res
     }
 
-    fun renameSubject(subject: Subject, name: String) {
+    fun renameSubject(subject: SubjectUiModel, name: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            databaseRepository.renameSubject(subject.id, name)
+        }
         updateSubject(subject.copy(name = name))
-
     }
 
     /**
@@ -265,7 +312,7 @@ class AttendanceViewModel(
      * @return An integer representing the attendance buffer.
      *         Negative if below minimum, positive if at or above minimum.
      */
-    fun attendanceBuffer(subject: Subject): StateFlow<Int> {
+    fun attendanceBuffer(subject: SubjectUiModel): StateFlow<Int> {
         return minimumRequiredAttendanceRatio.map { ratio->
             if (attendanceRatio(subject) < ratio) {
                 val presents =
