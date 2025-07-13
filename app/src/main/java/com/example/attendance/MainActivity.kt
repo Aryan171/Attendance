@@ -16,7 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import androidx.room.Room
 import com.example.attendance.preferences.PreferencesRepository
-import com.example.attendance.database.SubjectDatabase
+import com.example.attendance.database.AppDatabase
 import com.example.attendance.homeScreen.HomeScreen
 import com.example.attendance.subjectDetailScreen.SubjectDetailScreen
 import com.example.attendance.ui.theme.AppTheme
@@ -24,7 +24,7 @@ import com.example.attendance.viewModel.AttendanceViewModel
 
 class MainActivity : ComponentActivity() {
     companion object {
-        lateinit var db : SubjectDatabase
+        lateinit var db : AppDatabase
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
 
         db = Room.databaseBuilder(
             applicationContext,
-            SubjectDatabase::class.java,
+            AppDatabase::class.java,
             "subject_database"
         ).build()
 

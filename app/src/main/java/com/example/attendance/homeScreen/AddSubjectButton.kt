@@ -31,7 +31,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.attendance.database.Subject
+import com.example.attendance.database.subject.Subject
 import com.example.attendance.viewModel.AttendanceViewModel
 
 @Composable

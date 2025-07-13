@@ -1,4 +1,4 @@
-package com.example.attendance.database
+package com.example.attendance.database.subject
 
 import androidx.room.Dao
 import androidx.room.Delete

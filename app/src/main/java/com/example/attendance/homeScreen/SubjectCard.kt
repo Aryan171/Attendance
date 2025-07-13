@@ -55,7 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.attendance.attendanceUiElements.CircularProgressIndicator
-import com.example.attendance.database.Subject
+import com.example.attendance.database.subject.Subject
 import com.example.attendance.ui.theme.absent
 import com.example.attendance.ui.theme.present
 import com.example.attendance.ui.theme.smallRoundedCornerShape

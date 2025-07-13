@@ -4,8 +4,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.attendance.preferences.PreferencesRepository
-import com.example.attendance.database.Subject
-import com.example.attendance.database.SubjectDao
+import com.example.attendance.database.subject.Subject
+import com.example.attendance.database.subject.SubjectDao
 import com.example.attendance.ui.theme.AppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
