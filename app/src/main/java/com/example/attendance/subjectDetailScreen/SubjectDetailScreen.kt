@@ -68,8 +68,25 @@ fun SubjectDetailScreen(
         initialMonthYear.addOffset(pagerState.currentPage - initialCalendarPage.toLong())
     }
 
+    fun findPageIndex(date: LocalDate): Int {
+        return initialCalendarPage + (date.year - initialMonthYear.year) * 12 +
+                date.monthValue - initialMonthYear.monthValue
+    }
+
     Scaffold (
-        topBar = {SubjectDetailScreenTopAppBar(subject, onBackPress)},
+        topBar =
+            {
+                SubjectDetailScreenTopAppBar(
+                    subject = subject,
+                    onDateSelected =
+                        {
+                            animationScope.launch {
+                                pagerState.animateScrollToPage(findPageIndex(it))
+                            }
+                            selectedDate = it
+                        },
+                    onBackPress = onBackPress)
+            },
         bottomBar = {
             val attendanceBuffer by viewModel.attendanceBuffer(subject).collectAsState()
 
