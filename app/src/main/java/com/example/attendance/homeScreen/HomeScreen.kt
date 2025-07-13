@@ -13,7 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.attendance.database.subject.Subject
+import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.serialization.Serializable
 
@@ -23,7 +23,7 @@ object HomeScreen
 @Composable
 fun HomeScreen(
     viewModel: AttendanceViewModel,
-    subjectCardOnClick: (subject: Subject) -> Unit
+    subjectCardOnClick: (subject: SubjectUiModel) -> Unit
 ) {
     val subjectList = viewModel.subjectList
     Scaffold(

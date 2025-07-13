@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.attendance.attendanceUiElements.CircularProgressIndicator
-import com.example.attendance.database.subject.Subject
+import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.ui.theme.absent
 import com.example.attendance.ui.theme.present
 import com.example.attendance.viewModel.AttendanceViewModel
@@ -15,7 +15,7 @@ import java.time.Month
 
 @Composable
 fun InfoBox(
-    subject: Subject,
+    subject: SubjectUiModel,
     month: Month,
     year: Int,
     viewModel: AttendanceViewModel

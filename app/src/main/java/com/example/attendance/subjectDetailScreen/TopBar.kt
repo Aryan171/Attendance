@@ -8,12 +8,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import com.example.attendance.database.subject.Subject
+import com.example.attendance.database.subject.SubjectUiModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubjectDetailScreenTopAppBar(
-    subject: Subject,
+    subject: SubjectUiModel,
     onBackPress: () -> Unit
 ) {
     TopAppBar(

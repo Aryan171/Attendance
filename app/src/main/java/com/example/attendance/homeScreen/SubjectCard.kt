@@ -55,7 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.attendance.attendanceUiElements.CircularProgressIndicator
-import com.example.attendance.database.subject.Subject
+import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.ui.theme.absent
 import com.example.attendance.ui.theme.present
 import com.example.attendance.ui.theme.smallRoundedCornerShape
@@ -65,9 +65,9 @@ import java.time.LocalDate
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SubjectCard(
-    subject: Subject,
+    subject: SubjectUiModel,
     viewModel: AttendanceViewModel,
-    onClick: (Subject) -> Unit
+    onClick: (SubjectUiModel) -> Unit
 ) {
     var showDetailedCardView by remember {mutableStateOf(false)}
     val cardPaddingValues = PaddingValues(10.dp, 10.dp, 10.dp)
@@ -201,7 +201,7 @@ fun SubjectCard(
 
 @Composable
 fun SubjectDetails(
-    subject: Subject,
+    subject: SubjectUiModel,
     viewModel: AttendanceViewModel
 ) {
     Column (
@@ -261,7 +261,7 @@ fun SubjectDetails(
 
 @Composable
 fun DeleteDialog(
-    subject: Subject,
+    subject: SubjectUiModel,
     viewModel: AttendanceViewModel,
     hideDialog: () -> Unit
 ) {
@@ -305,7 +305,7 @@ fun DeleteDialog(
 
 @Composable
 fun ResetDialog(
-    subject: Subject,
+    subject: SubjectUiModel,
     viewModel: AttendanceViewModel,
     hideDialog: () -> Unit
 ) {
@@ -349,7 +349,7 @@ fun ResetDialog(
 
 @Composable
 fun RenameDialog(
-    subject: Subject,
+    subject: SubjectUiModel,
     viewModel: AttendanceViewModel,
     hideDialog: () -> Unit,
 ) {
@@ -431,7 +431,7 @@ fun RenameDialog(
 
 @Composable
 fun ModificationBox(
-    subject: Subject,
+    subject: SubjectUiModel,
     viewModel: AttendanceViewModel
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }

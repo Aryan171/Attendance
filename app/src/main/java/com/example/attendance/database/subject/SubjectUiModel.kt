@@ -18,5 +18,5 @@ data class SubjectUiModel (
     val name: String,
     val presentDays: Int = 0,
     val absentDays: Int = 0,
-    val attendance: MutableMap<LocalDate, Boolean> = mutableMapOf<LocalDate, Boolean>()
+    val attendance: MutableMap<LocalDate, Boolean> = mutableMapOf()
 )

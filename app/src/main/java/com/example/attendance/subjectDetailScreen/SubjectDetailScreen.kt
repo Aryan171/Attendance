@@ -26,7 +26,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.example.attendance.database.subject.Subject
+import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -39,7 +39,7 @@ data class SubjectDetailScreen(
 
 @Composable
 fun SubjectDetailScreen(
-    subject: Subject,
+    subject: SubjectUiModel,
     viewModel: AttendanceViewModel,
     onBackPress: () -> Unit
 ) {

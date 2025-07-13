@@ -2,7 +2,6 @@ package com.example.attendance.database.subject
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.time.LocalDate
 
 @Entity(tableName = "subject")
 data class Subject(

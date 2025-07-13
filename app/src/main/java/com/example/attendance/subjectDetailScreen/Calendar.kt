@@ -30,7 +30,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.attendance.database.subject.Subject
+import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.ui.theme.absent
 import com.example.attendance.ui.theme.present
 import com.example.attendance.ui.theme.smallRoundedCornerShape
@@ -40,7 +40,7 @@ import java.time.Month
 
 @Composable
 fun Calendar(
-    subject: Subject,
+    subject: SubjectUiModel,
     month: Month,
     year: Int,
     selectedDate: LocalDate?,
@@ -72,7 +72,7 @@ fun Calendar(
 
 @Composable
 fun MonthGrid(
-    subject: Subject,
+    subject: SubjectUiModel,
     month: Month,
     year: Int,
     selectedDate: LocalDate?,

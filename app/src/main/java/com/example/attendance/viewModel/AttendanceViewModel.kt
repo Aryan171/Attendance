@@ -63,7 +63,7 @@ class AttendanceViewModel(
         updateSubject(subject.copy(
             presentDays = 0,
             absentDays = 0,
-            attendance = mutableMapOf<LocalDate, Boolean>()
+            attendance = mutableMapOf()
         ))
     }
 

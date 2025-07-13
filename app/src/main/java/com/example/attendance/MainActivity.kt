@@ -17,6 +17,7 @@ import androidx.navigation.toRoute
 import androidx.room.Room
 import com.example.attendance.preferences.PreferencesRepository
 import com.example.attendance.database.AppDatabase
+import com.example.attendance.database.DatabaseRepository
 import com.example.attendance.homeScreen.HomeScreen
 import com.example.attendance.subjectDetailScreen.SubjectDetailScreen
 import com.example.attendance.ui.theme.AppTheme
@@ -32,10 +33,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         db = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java,
-            "subject_database"
-        ).build()
+                applicationContext,
+                AppDatabase::class.java,
+                "subject_database"
+            ).fallbackToDestructiveMigration(true).build()
 
         setContent {
             val navController = rememberNavController()
@@ -43,7 +44,12 @@ class MainActivity : ComponentActivity() {
             val viewModel by viewModels<AttendanceViewModel>{
                 viewModelFactory {
                     initializer {
-                        AttendanceViewModel(db.subjectDao(), PreferencesRepository(this@MainActivity))
+                        AttendanceViewModel(
+                            DatabaseRepository(
+                                db.attendanceDao(),
+                                db.subjectDao()
+                            ),
+                            PreferencesRepository(this@MainActivity))
                     }
                 }
             }

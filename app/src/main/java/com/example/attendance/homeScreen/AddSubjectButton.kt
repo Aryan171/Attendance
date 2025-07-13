@@ -31,7 +31,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.attendance.database.subject.Subject
+import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.viewModel.AttendanceViewModel
 
 @Composable
@@ -43,7 +43,7 @@ fun AddSubjectButton(
     AddSubjectDialog(
         showDialog = showAddSubjectDialog,
         addSubject = {
-            viewModel.addSubject(Subject(name = it))
+            viewModel.addSubject(SubjectUiModel(name = it))
         },
         hideDialog = {
             showAddSubjectDialog = false
