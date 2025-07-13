@@ -9,7 +9,7 @@ import androidx.room.Update
 @Dao
 interface SubjectDao {
     @Insert
-    suspend fun insertSubjectAndGetId(subject : Subject): Long
+    suspend fun insertSubject(subject : Subject): Long
 
     @Delete
     suspend fun delete(subject : Subject)

@@ -10,6 +10,9 @@ interface AttendanceDao {
     @Query("DELETE FROM attendance WHERE subjectId = :subjectId AND date = :date")
     suspend fun delete(subjectId: Long, date: String)
 
+    @Query("DELETE FROM attendance WHERE subjectId = :subjectId")
+    suspend fun deleteBySubjectId(subjectId: Long)
+
     @Upsert
     suspend fun upsert(attendance: Attendance)
 

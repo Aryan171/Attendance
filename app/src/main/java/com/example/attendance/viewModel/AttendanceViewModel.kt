@@ -124,7 +124,7 @@ class AttendanceViewModel(
     fun addSubject(subject: Subject) {
         viewModelScope.launch {
             val generatedId = withContext(Dispatchers.IO) {
-                dao.insertSubjectAndGetId(subject)
+                dao.insertSubject(subject)
             }
             subjectList.add(subject.copy(id = generatedId) )
         }
