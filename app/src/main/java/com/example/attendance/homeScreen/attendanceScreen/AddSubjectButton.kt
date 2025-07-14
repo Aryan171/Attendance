@@ -1,4 +1,4 @@
-package com.example.attendance.homeScreen
+package com.example.attendance.homeScreen.attendanceScreen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

@@ -19,6 +19,7 @@ import com.example.attendance.preferences.PreferencesRepository
 import com.example.attendance.database.AppDatabase
 import com.example.attendance.database.DatabaseRepository
 import com.example.attendance.homeScreen.HomeScreen
+import com.example.attendance.homeScreen.attendanceScreen.AttendanceScreen
 import com.example.attendance.subjectDetailScreen.SubjectDetailScreen
 import com.example.attendance.ui.theme.AppTheme
 import com.example.attendance.viewModel.AttendanceViewModel
@@ -100,8 +101,8 @@ class MainActivity : ComponentActivity() {
                             subject = viewModel.subjectList[subjectDetailScreen.subjectIndex],
                             viewModel = viewModel,
                             onBackPress = {
-                                navController.navigate(HomeScreen) {
-                                    popUpTo(HomeScreen) {
+                                navController.navigate(AttendanceScreen) {
+                                    popUpTo(AttendanceScreen) {
                                         inclusive = true
                                     }
                                 }
