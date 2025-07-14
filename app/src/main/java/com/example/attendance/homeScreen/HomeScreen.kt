@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.homeScreen.attendanceScreen.AttendanceScreen
+import com.example.attendance.homeScreen.locationsScreen.LocationsScreen
 import com.example.attendance.homeScreen.timeTableScreen.TimeTableScreen
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.serialization.Serializable
@@ -50,6 +51,10 @@ fun HomeScreen(
 
             composable<TimeTableScreen> {
                 TimeTableScreen()
+            }
+
+            composable<LocationsScreen> {
+                LocationsScreen()
             }
         }
     }

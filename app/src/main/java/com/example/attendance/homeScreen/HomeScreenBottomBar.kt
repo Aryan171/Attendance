@@ -1,4 +1,7 @@
 package com.example.attendance.homeScreen
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -11,6 +14,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
 import com.example.attendance.R
 import com.example.attendance.homeScreen.attendanceScreen.AttendanceScreen
+import com.example.attendance.homeScreen.locationsScreen.LocationsScreen
 import com.example.attendance.homeScreen.timeTableScreen.TimeTableScreen
 
 @Composable
@@ -41,7 +45,7 @@ fun HomeScreenBottomBar(
                             R.drawable.check_box
                             }
                     ),
-                    contentDescription = "goto attendance screen"
+                    contentDescription = "attendance screen"
                 )
             },
             alwaysShowLabel = false
@@ -60,13 +64,36 @@ fun HomeScreenBottomBar(
             icon = {
                 Icon(
                     painter = painterResource(
-                        id = if (selected == Screens.ATTENDANCE) {
-                            R.drawable.checkboxfilled
+                        id = if (selected == Screens.TIME_TABLE) {
+                            R.drawable.filled_time_table
                         } else {
-                            R.drawable.check_box
+                            R.drawable.time_table
                         }
                     ),
-                    contentDescription = "goto attendance screen"
+                    contentDescription = "time table screen"
+                )
+            },
+            alwaysShowLabel = false
+        )
+
+        NavigationBarItem(
+            selected = selected == Screens.LOCATIONS,
+            onClick = {
+                if (selected == Screens.LOCATIONS) {
+                    return@NavigationBarItem
+                }
+                selected = Screens.LOCATIONS
+                navController.popBackStack()
+                navController.navigate(LocationsScreen)
+            },
+            icon = {
+                Icon(
+                    imageVector = if (selected == Screens.LOCATIONS) {
+                            Icons.Filled.LocationOn
+                        } else {
+                            Icons.Outlined.LocationOn
+                        },
+                    contentDescription = "locations screen"
                 )
             },
             alwaysShowLabel = false
