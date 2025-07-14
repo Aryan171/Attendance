@@ -211,24 +211,19 @@ fun SubjectDetails(
     ) {
         val attendanceBuffer by viewModel.attendanceBuffer(subject).collectAsState()
 
-        val animatedAttendanceBuffer by animateIntAsState(
-            targetValue = attendanceBuffer,
-            animationSpec = tween(durationMillis = 500)
-        )
-
         Text(
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
             text = if (attendanceBuffer < 0) {
-                "Must attend ${-animatedAttendanceBuffer} " +
+                "Must attend ${-attendanceBuffer} " +
                         if (attendanceBuffer == -1) {"class"} else {"classes"}
             } else if (attendanceBuffer > 0) {
-                "Can miss : $animatedAttendanceBuffer " +
+                "Can miss : $attendanceBuffer " +
                         if (attendanceBuffer == 1) {"class"} else {"classes"}
             } else {
                 "Right on edge, don't miss any class"
             },
-            color = if (animatedAttendanceBuffer <= 0) { absent } else { present }
+            color = if (attendanceBuffer <= 0) { absent } else { present }
         )
 
         Row (

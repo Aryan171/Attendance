@@ -97,14 +97,14 @@ fun MonthGrid(
                     .fillMaxWidth()
                     .height(boxSize)
             ) {
-                for (i in 0..6) {
+                (0..6).forEach { _ ->
                     if (day.month.value != month.value) {
                         Box(
                             modifier = Modifier.size(boxSize)
                         )
 
                         day = day.plusDays(1)
-                        continue
+                        return@forEach
                     }
 
                     val value = subject.attendance[day]

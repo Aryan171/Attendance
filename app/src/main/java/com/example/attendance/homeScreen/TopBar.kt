@@ -286,16 +286,14 @@ fun ChangeMinimumAttendanceDialog(
         mutableStateOf("")
     }
 
-    val setMinimumAttendance = {
-        try {
-            val minimumRequiredAttendanceRatio = minimumAttendance.toFloat() / 100f
-            if (minimumRequiredAttendanceRatio !in 0f..100f) {
-                throw Exception("number not in range")
-            }
+    fun setMinimumAttendance() {
+        val minimumRequiredAttendanceRatio = minimumAttendance.toFloat() / 100f
+
+        if (minimumRequiredAttendanceRatio !in 0f..1f) {
+            minimumAttendance = ""
+        } else {
             viewModel.setMinimumRequiredAttendanceRatio(minimumRequiredAttendanceRatio)
             hideDialog()
-        } catch (_: Exception) {
-            minimumAttendance = ""
         }
     }
 
@@ -353,7 +351,7 @@ fun ChangeMinimumAttendanceDialog(
                     }
 
                     FilledTonalButton(
-                        onClick = setMinimumAttendance
+                        onClick = { setMinimumAttendance() }
                     ) {
                         Text(text = "Change")
                     }
