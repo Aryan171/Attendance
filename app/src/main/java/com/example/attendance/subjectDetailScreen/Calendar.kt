@@ -192,16 +192,21 @@ fun getFirstDayOfGrid(month: Month, year: Int): LocalDate {
     return firstDay
 }
 
+/**
+ * Composable function that displays the days of the week (MON, TUE, etc.) in a row.
+ * Each day is a Text composable, and they are evenly spaced across the width of the screen.
+ */
 @Composable
 fun WeekDays() {
     Row (
         modifier = Modifier
             .fillMaxWidth()
     ) {
-        for (day in DayOfWeek.entries) {
+        val daysOfWeek = remember { listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN") }
+        for (day in daysOfWeek) {
             Text(
                 modifier = Modifier.weight(1f),
-                text = day.name.substring(0, 3),
+                text = day,
                 textAlign = TextAlign.Center
             )
         }
