@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ButtonDefaults
@@ -43,71 +44,76 @@ fun ModificationBox(
     var rowWidth by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
 
-    Row(
+    Box(
         modifier = Modifier
-            .fillMaxSize()
-            .onGloballyPositioned {
-                rowWidth = with(density) { it.size.width.toDp() }
-            }
-        ,
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+            .fillMaxSize(),
+        contentAlignment = Alignment.BottomCenter
     ) {
-        val value = subject.attendance[date]
-        val maxButtonHeight = 50.dp
-        val maxButtonPadding = 10.dp
-        val maxButtonWidth = rowWidth / 3 - maxButtonPadding * 2
-
-        // absent button
-        ModificationBoxButton(
-            visible = date != null && showModificationButtons && value != false,
-            text = "Absent",
-            maxButtonHeight = maxButtonHeight,
-            maxButtonWidth = maxButtonWidth,
-            maxButtonPadding = maxButtonPadding,
-            backgroundColor = absent
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned {
+                    rowWidth = with(density) { it.size.width.toDp() }
+                },
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            if (date != null) {
-                viewModel.markAbsent(subject, date)
-            }
-        }
+            val value = subject.attendance[date]
+            val maxButtonHeight = 50.dp
+            val maxButtonPadding = 10.dp
+            val maxButtonWidth = rowWidth / 3 - maxButtonPadding * 2
 
-        // present button
-        ModificationBoxButton(
-            visible = date != null && showModificationButtons && value != true,
-            text = "Present",
-            maxButtonHeight = maxButtonHeight,
-            maxButtonWidth = maxButtonWidth,
-            maxButtonPadding = maxButtonPadding,
-            backgroundColor = present
-        ) {
-            if (date != null) {
-                viewModel.markPresent(subject, date)
+            // absent button
+            ModificationBoxButton(
+                visible = date != null && showModificationButtons && value != false,
+                text = "Absent",
+                maxButtonHeight = maxButtonHeight,
+                maxButtonWidth = maxButtonWidth,
+                maxButtonPadding = maxButtonPadding,
+                backgroundColor = absent
+            ) {
+                if (date != null) {
+                    viewModel.markAbsent(subject, date)
+                }
             }
-        }
 
-        // clear button
-        ModificationBoxButton(
-            visible = date != null && showModificationButtons && value != null,
-            text = "Clear",
-            maxButtonHeight = maxButtonHeight,
-            maxButtonWidth = maxButtonWidth,
-            maxButtonPadding = maxButtonPadding
-        ) {
-            if (date != null) {
-                viewModel.clearAttendance(subject, date)
+            // present button
+            ModificationBoxButton(
+                visible = date != null && showModificationButtons && value != true,
+                text = "Present",
+                maxButtonHeight = maxButtonHeight,
+                maxButtonWidth = maxButtonWidth,
+                maxButtonPadding = maxButtonPadding,
+                backgroundColor = present
+            ) {
+                if (date != null) {
+                    viewModel.markPresent(subject, date)
+                }
             }
-        }
 
-        // reset button
-        ModificationBoxButton(
-            visible = showResetButton,
-            text = "Reset",
-            onClick = onReset,
-            maxButtonHeight = maxButtonHeight,
-            maxButtonWidth = maxButtonWidth,
-            maxButtonPadding = maxButtonPadding
-        )
+            // clear button
+            ModificationBoxButton(
+                visible = date != null && showModificationButtons && value != null,
+                text = "Clear",
+                maxButtonHeight = maxButtonHeight,
+                maxButtonWidth = maxButtonWidth,
+                maxButtonPadding = maxButtonPadding
+            ) {
+                if (date != null) {
+                    viewModel.clearAttendance(subject, date)
+                }
+            }
+
+            // reset button
+            ModificationBoxButton(
+                visible = showResetButton,
+                text = "Reset",
+                onClick = onReset,
+                maxButtonHeight = maxButtonHeight,
+                maxButtonWidth = maxButtonWidth,
+                maxButtonPadding = maxButtonPadding
+            )
+        }
     }
 }
 

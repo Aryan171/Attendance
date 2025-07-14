@@ -22,11 +22,13 @@ object AttendanceScreen
 
 @Composable
 fun AttendanceScreen(
+    modifier: Modifier,
     viewModel: AttendanceViewModel,
     subjectCardOnClick: (subject: SubjectUiModel) -> Unit
 ) {
     val subjectList = viewModel.subjectList
     Scaffold(
+        modifier = modifier,
         topBar = { HomeScreenTopBar(viewModel) },
         floatingActionButton = {
             AddSubjectButton(viewModel)

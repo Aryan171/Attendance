@@ -1,6 +1,10 @@
 package com.example.attendance.homeScreen
-
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -9,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.homeScreen.attendanceScreen.AttendanceScreen
+import com.example.attendance.homeScreen.timeTableScreen.TimeTableScreen
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.serialization.Serializable
 
@@ -23,17 +28,28 @@ fun HomeScreen(
     val navController = rememberNavController()
 
     Scaffold(
-        bottomBar = {}
-    ) { _->
+        bottomBar = { HomeScreenBottomBar(navController) }
+    ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = AttendanceScreen
+            startDestination = AttendanceScreen,
+            enterTransition = {
+                fadeIn(animationSpec = tween(600))
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(600))
+            }
         ) {
             composable<AttendanceScreen> {
                 AttendanceScreen(
+                    modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding()),
                     viewModel = viewModel,
                     subjectCardOnClick = subjectCardOnClick
                 )
+            }
+
+            composable<TimeTableScreen> {
+                TimeTableScreen()
             }
         }
     }

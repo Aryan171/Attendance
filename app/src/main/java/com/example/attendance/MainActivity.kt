@@ -79,22 +79,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    composable<SubjectDetailScreen> (
-                        enterTransition = {
-                            slideInHorizontally(
-                                initialOffsetX = {
-                                    it
-                                }
-                            )
-                        },
-                        exitTransition = {
-                            slideOutHorizontally(
-                                targetOffsetX = {
-                                    it
-                                }
-                            )
-                        }
-                    ) {
+                    composable<SubjectDetailScreen> {
                         val subjectDetailScreen: SubjectDetailScreen = it.toRoute()
 
                         SubjectDetailScreen(
