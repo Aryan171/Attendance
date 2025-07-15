@@ -1,6 +1,8 @@
 package com.example.attendance.viewModel
 
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.attendance.database.DatabaseRepository
@@ -34,14 +36,15 @@ class AttendanceViewModel(
         loadSubjectList()
     }
 
+    val timeLineHourHeight = preferencesRepository.getTimeLineHourHeight()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = 50.dp)
+
     val theme = preferencesRepository.getTheme()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppTheme.DYNAMIC)
 
 
     val minimumRequiredAttendanceRatio = preferencesRepository.getMinimumRequiredAttendanceRatio()
-        .stateIn(
-            viewModelScope, SharingStarted.WhileSubscribed(5000), 0.75f
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.75f)
 
     fun setTheme(theme: AppTheme) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -52,6 +55,12 @@ class AttendanceViewModel(
     fun setMinimumRequiredAttendanceRatio(minAttendanceRatio: Float) {
         viewModelScope.launch(Dispatchers.IO) {
             preferencesRepository.setMinimumRequiredAttendanceRatio(minAttendanceRatio)
+        }
+    }
+
+    fun setTimeLineHourHeight(height: Dp) {
+        viewModelScope.launch(context = Dispatchers.IO) {
+            preferencesRepository.setTimeLineHourHeight(height)
         }
     }
 

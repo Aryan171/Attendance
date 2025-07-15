@@ -1,6 +1,8 @@
 package com.example.attendance.preferences
 
 import android.content.Context
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -15,6 +17,7 @@ class PreferencesRepository(
 ) {
     private val minAttendanceKey = floatPreferencesKey("minimumRequiredAttendanceRatio")
     private val themeKey = intPreferencesKey("theme")
+    private val timeLineHourHeightKey = floatPreferencesKey("timeLineHourHeight")
 
     private val dataStore = context.dataStore
 
@@ -42,6 +45,18 @@ class PreferencesRepository(
     suspend fun setTheme(theme: AppTheme) {
         dataStore.edit {
             it[themeKey] = theme.ordinal
+        }
+    }
+
+    fun getTimeLineHourHeight(): Flow<Dp> {
+        return dataStore.data.map {
+            it[timeLineHourHeightKey]?.dp ?: 50.dp
+        }
+    }
+
+    suspend fun setTimeLineHourHeight(height: Dp) {
+        dataStore.edit {
+            it[timeLineHourHeightKey] = height.value
         }
     }
 }

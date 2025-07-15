@@ -1,5 +1,6 @@
 package com.example.attendance.homeScreen.timeTableScreen
 
+import android.util.Log
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
@@ -27,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +39,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
+import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.time.DayOfWeek
@@ -46,7 +49,8 @@ object TimeTableScreen
 
 @Composable
 fun TimeTableScreen(
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
+    viewModel: AttendanceViewModel
 ) {
     Scaffold (
         modifier = Modifier
@@ -63,25 +67,36 @@ fun TimeTableScreen(
                 pageCount = { 7 }
             )
 
-            var selectedWeekDay by remember(pagerState.currentPage) {
-                mutableStateOf(DayOfWeek.entries[pagerState.currentPage])
+            var animatingScroll by remember { mutableStateOf(false) }
+
+            var selectedWeekDay by rememberSaveable {
+                mutableStateOf(DayOfWeek.MONDAY)
             }
 
             val animationScope = rememberCoroutineScope()
+
+            // changing the 'selectedWeekDay' when scroll is being animated will cause jittery animation
+            LaunchedEffect(pagerState.currentPage) {
+                if (!animatingScroll) {
+                    selectedWeekDay = DayOfWeek.entries[pagerState.currentPage]
+                }
+            }
 
             WeekDaySelector(
                 selectedWeekDay = selectedWeekDay
             ) { dayOfWeek ->
                 selectedWeekDay = dayOfWeek
                 animationScope.launch {
+                    animatingScroll = true
                     pagerState.animateScrollToPage(selectedWeekDay.ordinal)
+                    animatingScroll = false
                 }
             }
 
             HorizontalPager(
                 state = pagerState
             ) { pageNumber ->
-                TimeTableDay(DayOfWeek.entries[pageNumber])
+                TimeTableDay(DayOfWeek.entries[pageNumber], viewModel)
             }
         }
     }

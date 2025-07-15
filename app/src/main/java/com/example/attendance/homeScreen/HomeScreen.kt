@@ -50,7 +50,8 @@ fun HomeScreen(
 
             composable<TimeTableScreen> {
                 TimeTableScreen(
-                    paddingValues = PaddingValues(bottom = paddingValues.calculateBottomPadding())
+                    paddingValues = PaddingValues(bottom = paddingValues.calculateBottomPadding()),
+                    viewModel = viewModel
                 )
             }
 
