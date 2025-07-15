@@ -160,11 +160,7 @@ fun SubjectDetailScreen(
                         animationSpec = tween(500)
                     ),
                 verticalAlignment = Alignment.Top,
-                state = pagerState,
-                key = { pageIndex ->
-                    val monthOffset = pageIndex.toLong() - initialCalendarPage.toLong()
-                    initialMonthYear.plusMonths(monthOffset).toString()
-                }
+                state = pagerState
             ) { page ->
                 val pageMonthYear = initialMonthYear.addOffset((page - initialCalendarPage).toLong())
 
