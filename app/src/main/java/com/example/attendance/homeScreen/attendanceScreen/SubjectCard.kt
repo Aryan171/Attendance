@@ -41,6 +41,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,7 +69,7 @@ fun SubjectCard(
     viewModel: AttendanceViewModel,
     onClick: (SubjectUiModel) -> Unit
 ) {
-    var showDetailedCardView by remember {mutableStateOf(false)}
+    var showDetailedCardView by rememberSaveable {mutableStateOf(false)}
     val cardPaddingValues = PaddingValues(10.dp, 10.dp, 10.dp)
     val maxIconButtonSize = 40.dp
     val currentDate = LocalDate.now()

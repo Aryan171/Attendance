@@ -128,25 +128,35 @@ fun HomeScreenTopBar(
             ) {
                 Icon(
                     painter = painterResource(
-                        if (theme == AppTheme.LIGHT) {
-                            R.drawable.clear_day_24dp_e3e3e3_fill0_wght400_grad0_opsz24
-                        } else if (theme == AppTheme.DARK) {
-                            R.drawable.dark_mode_24dp_e3e3e3_fill0_wght400_grad0_opsz24
-                        } else if (theme == AppTheme.SYSTEM_DEFAULT) {
-                            R.drawable.brightness_auto_24dp_e3e3e3_fill0_wght400_grad0_opsz24
-                        } else {
-                            R.drawable.water_drop_24dp_e3e3e3_fill0_wght400_grad0_opsz24
+                        when (theme) {
+                            AppTheme.LIGHT -> {
+                                R.drawable.clear_day_24dp_e3e3e3_fill0_wght400_grad0_opsz24
+                            }
+                            AppTheme.DARK -> {
+                                R.drawable.dark_mode_24dp_e3e3e3_fill0_wght400_grad0_opsz24
+                            }
+                            AppTheme.SYSTEM_DEFAULT -> {
+                                R.drawable.brightness_auto_24dp_e3e3e3_fill0_wght400_grad0_opsz24
+                            }
+                            else -> {
+                                R.drawable.water_drop_24dp_e3e3e3_fill0_wght400_grad0_opsz24
+                            }
                         }
                     ),
                     contentDescription =
-                        if (theme == AppTheme.LIGHT) {
-                            "light theme"
-                        } else if (theme == AppTheme.DARK) {
-                            "dark theme"
-                        } else if (theme == AppTheme.SYSTEM_DEFAULT) {
-                            "system theme"
-                        } else {
-                            "dynamic theme"
+                        when (theme) {
+                            AppTheme.LIGHT -> {
+                                "light theme"
+                            }
+                            AppTheme.DARK -> {
+                                "dark theme"
+                            }
+                            AppTheme.SYSTEM_DEFAULT -> {
+                                "system theme"
+                            }
+                            else -> {
+                                "dynamic theme"
+                            }
                         }
                 )
             }
@@ -183,13 +193,11 @@ fun HomeScreenTopBar(
                 hideDropdownMenu = { showThemeSelectorDropDown = false }
             )
 
-            if (showChangeMinimumAttendanceDialog) {
-                ChangeMinimumAttendanceDialog(
-                    showDialog = showChangeMinimumAttendanceDialog,
-                    viewModel = viewModel,
-                    hideDialog = { showChangeMinimumAttendanceDialog = false }
-                )
-            }
+            ChangeMinimumAttendanceDialog(
+                showDialog = showChangeMinimumAttendanceDialog,
+                viewModel = viewModel,
+                hideDialog = { showChangeMinimumAttendanceDialog = false }
+            )
         }
     )
 }

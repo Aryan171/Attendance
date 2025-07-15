@@ -5,8 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -15,11 +13,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import androidx.room.Room
-import com.example.attendance.preferences.PreferencesRepository
 import com.example.attendance.database.AppDatabase
 import com.example.attendance.database.DatabaseRepository
 import com.example.attendance.homeScreen.HomeScreen
 import com.example.attendance.homeScreen.attendanceScreen.AttendanceScreen
+import com.example.attendance.preferences.PreferencesRepository
 import com.example.attendance.subjectDetailScreen.SubjectDetailScreen
 import com.example.attendance.ui.theme.AppTheme
 import com.example.attendance.viewModel.AttendanceViewModel

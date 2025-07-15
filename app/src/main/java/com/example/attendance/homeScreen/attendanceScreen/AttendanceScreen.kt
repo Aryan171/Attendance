@@ -33,7 +33,7 @@ fun AttendanceScreen(
         floatingActionButton = {
             AddSubjectButton(viewModel)
         }
-    ) {
+    ) { paddingValues ->
         if (subjectList.isEmpty()) {
             Box (
                 modifier = Modifier
@@ -50,14 +50,16 @@ fun AttendanceScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(it)
+                    .padding(paddingValues)
             ) {
                 items(
                     items = subjectList,
-                    key = { it.id }
-                ) {
+                    key = { subject ->
+                        subject.id
+                    }
+                ) { subject->
                     SubjectCard(
-                        subject = it,
+                        subject = subject,
                         viewModel = viewModel,
                         onClick = subjectCardOnClick
                     )
