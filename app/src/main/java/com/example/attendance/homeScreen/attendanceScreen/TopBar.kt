@@ -40,7 +40,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.attendance.R
 import com.example.attendance.ui.theme.AppTheme
-import com.example.attendance.ui.theme.mediumRoundedCornerShape
 import com.example.attendance.viewModel.AttendanceViewModel
 import java.time.LocalDate
 import kotlin.math.roundToInt
@@ -212,7 +211,7 @@ fun ThemeSelectorDropDown(
     DropdownMenu (
         expanded = expanded,
         onDismissRequest = hideDropdownMenu,
-        shape = mediumRoundedCornerShape
+        shape = MaterialTheme.shapes.large
     ) {
         if (theme != AppTheme.LIGHT) {
             DropdownMenuItem(
@@ -379,7 +378,7 @@ fun SortByDropdownMenu(
     DropdownMenu (
         expanded = expanded,
         onDismissRequest = hideDropdownMenu,
-        shape = mediumRoundedCornerShape
+        shape = MaterialTheme.shapes.large
     ) {
         for (i in 0 until dropdownMenuTextList.size) {
             DropdownMenuItem(
@@ -404,7 +403,7 @@ fun TopBarDropdownMenu(
     DropdownMenu (
         expanded = expanded,
         onDismissRequest = hideDropdownMenu,
-        shape = mediumRoundedCornerShape
+        shape = MaterialTheme.shapes.large
     ) {
         for (i in 0 until dropdownMenuTextList.size) {
             DropdownMenuItem(

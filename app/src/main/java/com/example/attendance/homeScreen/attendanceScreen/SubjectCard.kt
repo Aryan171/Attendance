@@ -46,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -58,7 +59,6 @@ import com.example.attendance.attendanceUiElements.CircularProgressIndicator
 import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.ui.theme.absent
 import com.example.attendance.ui.theme.present
-import com.example.attendance.ui.theme.smallRoundedCornerShape
 import com.example.attendance.viewModel.AttendanceViewModel
 import java.time.LocalDate
 
@@ -70,7 +70,7 @@ fun SubjectCard(
     onClick: (SubjectUiModel) -> Unit
 ) {
     var showDetailedCardView by rememberSaveable {mutableStateOf(false)}
-    val cardPaddingValues = PaddingValues(10.dp, 10.dp, 10.dp)
+    val cardPaddingValues = PaddingValues(10.dp, 5.dp, 10.dp, bottom = 5.dp)
     val maxIconButtonSize = 40.dp
     val currentDate = LocalDate.now()
     val presentToday: Boolean? =
@@ -96,8 +96,14 @@ fun SubjectCard(
         modifier = Modifier
             .animateContentSize()
             .padding(cardPaddingValues)
-            .background(color = MaterialTheme.colorScheme.surfaceVariant, smallRoundedCornerShape)
-            .clip(smallRoundedCornerShape)
+            .shadow(
+                elevation = 5.dp,
+                shape = MaterialTheme.shapes.medium
+            )
+            .background(color = MaterialTheme.colorScheme.surfaceVariant,
+                MaterialTheme.shapes.medium
+            )
+            .clip(MaterialTheme.shapes.medium)
             // closing the details card when clicking on the card
             .combinedClickable(
                 onClick = { showDetailedCardView = false },
@@ -108,8 +114,8 @@ fun SubjectCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(backgroundColor, smallRoundedCornerShape)
-                .clip(smallRoundedCornerShape)
+                .background(backgroundColor, MaterialTheme.shapes.medium)
+                .clip(MaterialTheme.shapes.medium)
                 .combinedClickable (
                     onClick = { onClick(subject) },
                     onLongClick = { showDetailedCardView = !showDetailedCardView },

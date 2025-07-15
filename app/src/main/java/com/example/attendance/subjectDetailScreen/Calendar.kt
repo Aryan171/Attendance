@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.ui.theme.absent
 import com.example.attendance.ui.theme.present
-import com.example.attendance.ui.theme.smallRoundedCornerShape
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.Month
@@ -162,10 +161,10 @@ fun DayCard(
                 } else {
                     Color.Transparent
                 },
-                shape = smallRoundedCornerShape
+                shape = MaterialTheme.shapes.medium
             )
-            .background(animatedColor, shape = smallRoundedCornerShape)
-            .clip(smallRoundedCornerShape)
+            .background(animatedColor, shape = MaterialTheme.shapes.medium)
+            .clip(MaterialTheme.shapes.medium)
             .clickable(
                 onClick = onClick
             ),
