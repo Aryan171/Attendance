@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -44,8 +45,12 @@ import java.time.DayOfWeek
 object TimeTableScreen
 
 @Composable
-fun TimeTableScreen() {
+fun TimeTableScreen(
+    paddingValues: PaddingValues
+) {
     Scaffold (
+        modifier = Modifier
+            .padding(paddingValues),
         topBar = { TimeTableTopBar() }
     ) { paddingValues ->
         Column(
@@ -121,6 +126,7 @@ fun WeekDaySelector(
     Box (
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 5.dp)
             .onGloballyPositioned {
                 with (density) {
                     width = it.size.width.toDp()
@@ -154,17 +160,18 @@ fun InteractableWeekDays(
         modifier = Modifier
             .fillMaxWidth()
     ) {
-        for (day in DayOfWeek.entries) {
+        val weekDays = remember { listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN") }
+        for (day in 0..6) {
             Text(
                 modifier = Modifier
                     .clip(CircleShape)
                     .clickable(
-                        onClick = { setSelectedWeekDay(day) },
+                        onClick = { setSelectedWeekDay(DayOfWeek.entries[day]) },
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     )
                     .weight(1f),
-                text = day.name.substring(0..2),
+                text = weekDays[day],
                 textAlign = TextAlign.Center
             )
         }

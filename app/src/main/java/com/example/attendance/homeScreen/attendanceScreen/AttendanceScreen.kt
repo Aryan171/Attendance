@@ -1,6 +1,7 @@
 package com.example.attendance.homeScreen.attendanceScreen
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -22,13 +23,14 @@ object AttendanceScreen
 
 @Composable
 fun AttendanceScreen(
-    modifier: Modifier,
+    paddingValues: PaddingValues,
     viewModel: AttendanceViewModel,
     subjectCardOnClick: (subject: SubjectUiModel) -> Unit
 ) {
     val subjectList = viewModel.subjectList
     Scaffold(
-        modifier = modifier,
+        modifier = Modifier
+            .padding(paddingValues),
         topBar = { HomeScreenTopBar(viewModel) },
         floatingActionButton = {
             AddSubjectButton(viewModel)

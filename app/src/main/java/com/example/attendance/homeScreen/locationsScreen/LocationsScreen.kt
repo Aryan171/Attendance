@@ -1,5 +1,6 @@
 package com.example.attendance.homeScreen.locationsScreen
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import kotlinx.serialization.Serializable
@@ -8,6 +9,8 @@ import kotlinx.serialization.Serializable
 object LocationsScreen
 
 @Composable
-fun LocationsScreen() {
+fun LocationsScreen(
+    paddingValues: PaddingValues
+) {
     Text("Locations screen")
 }

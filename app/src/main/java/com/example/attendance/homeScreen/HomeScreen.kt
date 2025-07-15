@@ -2,6 +2,7 @@ package com.example.attendance.homeScreen
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -41,18 +42,22 @@ fun HomeScreen(
         ) {
             composable<AttendanceScreen> {
                 AttendanceScreen(
-                    modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding()),
+                    paddingValues = PaddingValues(bottom = paddingValues.calculateBottomPadding()),
                     viewModel = viewModel,
                     subjectCardOnClick = subjectCardOnClick
                 )
             }
 
             composable<TimeTableScreen> {
-                TimeTableScreen()
+                TimeTableScreen(
+                    paddingValues = PaddingValues(bottom = paddingValues.calculateBottomPadding())
+                )
             }
 
             composable<LocationsScreen> {
-                LocationsScreen()
+                LocationsScreen(
+                    paddingValues = PaddingValues(bottom = paddingValues.calculateBottomPadding())
+                )
             }
         }
     }
