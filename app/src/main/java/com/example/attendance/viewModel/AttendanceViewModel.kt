@@ -2,14 +2,13 @@ package com.example.attendance.viewModel
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import com.example.attendance.MainActivity
+import com.example.attendance.Preferences.PreferencesRepository
 import com.example.attendance.database.Subject
 import com.example.attendance.database.SubjectDao
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
@@ -18,25 +17,26 @@ import kotlin.math.ceil
 import kotlin.math.floor
 
 class AttendanceViewModel(
-    private val dao: SubjectDao
+    private val dao: SubjectDao,
+    private val preferencesRepository: PreferencesRepository
 ): ViewModel() {
     init {
         loadSubjectList()
     }
 
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val dao = MainActivity.db.subjectDao()
-                AttendanceViewModel(
-                    dao = dao
-                )
-            }
+    val _subjectList = mutableStateListOf<Subject>()
+    val subjectList = _subjectList
+
+    val minimumRequiredAttendanceRatio = preferencesRepository.getMinimumRequiredAttendanceRatio()
+        .stateIn(
+            viewModelScope, SharingStarted.WhileSubscribed(5000), 0.75f
+        )
+
+    fun setMinimumRequiredAttendanceRatio(minAttendanceRatio: Float) {
+        viewModelScope.launch(Dispatchers.IO) {
+            preferencesRepository.setMinimumRequiredAttendanceRatio(minAttendanceRatio)
         }
     }
-
-    private val _subjectList = mutableStateListOf<Subject>()
-    val subjectList = _subjectList
 
     fun clearAttendance(subject: Subject) {
         updateSubject(subject.copy(
@@ -230,6 +230,8 @@ class AttendanceViewModel(
 
     }
 
+
+
     /**
      * Calculates the attendance buffer for a subject.
      * The attendance buffer is the number of classes a student can miss or must attend
@@ -250,14 +252,13 @@ class AttendanceViewModel(
      *         Negative if below minimum, positive if at or above minimum.
      */
     fun attendanceBuffer(subject: Subject): Int {
-        val minimumRequiredAttendanceRatio = 0.75
-        return if (attendanceRatio(subject) < minimumRequiredAttendanceRatio) {
-            val presents = (minimumRequiredAttendanceRatio * (subject.presentDays + subject.absentDays)
-            - subject.presentDays) / (1 - minimumRequiredAttendanceRatio)
+        return if (attendanceRatio(subject) < minimumRequiredAttendanceRatio.value) {
+            val presents = (minimumRequiredAttendanceRatio.value * (subject.presentDays + subject.absentDays)
+            - subject.presentDays) / (1 - minimumRequiredAttendanceRatio.value)
 
             -ceil(presents).toInt()
         } else {
-            val absents = (subject.presentDays / minimumRequiredAttendanceRatio) -
+            val absents = (subject.presentDays / minimumRequiredAttendanceRatio.value) -
             subject.absentDays - subject.presentDays
 
             floor(absents).toInt()

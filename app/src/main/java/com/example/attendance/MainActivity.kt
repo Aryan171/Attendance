@@ -5,11 +5,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import androidx.room.Room
+import com.example.attendance.Preferences.PreferencesRepository
 import com.example.attendance.database.SubjectDatabase
 import com.example.attendance.homeScreen.HomeScreen
 import com.example.attendance.subjectDetailScreen.SubjectDetailScreen
@@ -33,7 +39,12 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val navController = rememberNavController()
-            val viewModelFactory = AttendanceViewModel.Factory
+
+            val viewModelFactory: ViewModelProvider.Factory = viewModelFactory {
+                initializer {
+                    AttendanceViewModel(db.subjectDao(), PreferencesRepository(this@MainActivity))
+                }
+            }
             val viewModel by viewModels<AttendanceViewModel>{viewModelFactory}
 
             AppTheme {
@@ -47,7 +58,7 @@ class MainActivity : ComponentActivity() {
                             subjectCardOnClick = { subject->
                                 navController.navigate(
                                     SubjectDetailScreen(
-                                        subjectIndex = viewModel.subjectList.indexOfFirst {
+                                        subjectIndex = viewModel._subjectList.indexOfFirst {
                                             it.id == subject.id
                                         }
                                     )
@@ -56,11 +67,26 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    composable<SubjectDetailScreen> {
+                    composable<SubjectDetailScreen> (
+                        enterTransition = {
+                            slideInHorizontally(
+                                initialOffsetX = {
+                                    it
+                                }
+                            )
+                        },
+                        exitTransition = {
+                            slideOutHorizontally(
+                                targetOffsetX = {
+                                    it
+                                }
+                            )
+                        }
+                    ) {
                         val subjectDetailScreen: SubjectDetailScreen = it.toRoute()
 
                         SubjectDetailScreen(
-                            subject = viewModel.subjectList[subjectDetailScreen.subjectIndex],
+                            subject = viewModel._subjectList[subjectDetailScreen.subjectIndex],
                             viewModel = viewModel,
                             onBackPress = {
                                 navController.navigate(HomeScreen) {
