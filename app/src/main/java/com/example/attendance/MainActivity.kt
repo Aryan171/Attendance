@@ -15,7 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import androidx.room.Room
-import com.example.attendance.Preferences.PreferencesRepository
+import com.example.attendance.preferences.PreferencesRepository
 import com.example.attendance.database.SubjectDatabase
 import com.example.attendance.homeScreen.HomeScreen
 import com.example.attendance.subjectDetailScreen.SubjectDetailScreen

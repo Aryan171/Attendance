@@ -3,7 +3,7 @@ package com.example.attendance.viewModel
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.attendance.Preferences.PreferencesRepository
+import com.example.attendance.preferences.PreferencesRepository
 import com.example.attendance.database.Subject
 import com.example.attendance.database.SubjectDao
 import com.example.attendance.ui.theme.AppTheme

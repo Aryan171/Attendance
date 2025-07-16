@@ -1,4 +1,4 @@
-package com.example.attendance.Preferences
+package com.example.attendance.preferences
 
 import android.content.Context
 import androidx.datastore.preferences.preferencesDataStore
