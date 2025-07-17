@@ -1,6 +1,5 @@
 package com.example.attendance.homeScreen.timeTableScreen
 
-import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -31,7 +30,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -41,6 +39,9 @@ import com.example.attendance.database.timeTable.TimeTable
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
+
+const val MILLIS_IN_HOUR = 3600000L
+const val MILLIS_IN_DAY = 86400000L
 
 @Composable
 fun TimeTableDay(
@@ -87,7 +88,6 @@ fun TimeLineGrid(
 
     val lineWidth = 1.5.dp
     val animationScope = rememberCoroutineScope()
-    val density = LocalDensity.current
 
     val tapTimeOutMs = 100L
 
@@ -96,6 +96,7 @@ fun TimeLineGrid(
             .pointerInput(Unit) {
                 awaitPointerEventScope {
                     var pointerDownTime: Long = 0
+                    var pointerDownPosition = Offset(0f, 0f)
                     while(true) {
                         val event = awaitPointerEvent()
                         val pointers = event.changes
@@ -104,11 +105,27 @@ fun TimeLineGrid(
                         if (pointers.size == 1) {
                             if (pointers[0].changedToDown()) {
                                 pointerDownTime = System.currentTimeMillis()
+                                pointerDownPosition = pointers[0].position
                             } else if (pointers[0].changedToUp() &&
                                 System.currentTimeMillis() - pointerDownTime < tapTimeOutMs &&
-                                pointers[0].positionChange() == Offset.Zero
+                                (pointers[0].position - pointerDownPosition).getDistance() == 0f
                                 ) {
-                                Log.i("", "tap tap tap ${pointers[0].position}")
+                                val pointer = pointers[0].position
+
+                                // when a tap is detected a one hour slot is added to the timetable
+                                val startTime = ((pointer.y - hourHeight.toPx() / 2) / hourHeight.toPx()).toLong() * MILLIS_IN_HOUR
+
+
+                                if (startTime in 0L until MILLIS_IN_DAY) {
+                                    val slot = TimeTable(
+                                        subjectId = null,
+                                        day = day.ordinal,
+                                        startTimeMillis = startTime,
+                                        endTimeMillis = startTime + MILLIS_IN_HOUR,
+                                    )
+
+                                    viewModel.addTimeTable(slot)
+                                }
 
                                 // consuming the tap gesture
                                 event.changes.forEach { it.consume() }
@@ -210,7 +227,7 @@ fun TimeLineGrid(
 
 @Composable
 fun TimeTableSlot(slot: TimeTable, hourHeight: Dp, xOffset: Dp) {
-    val yOffset = hourHeight * (slot.startTimeMillis / 3600000).toInt()
+    val yOffset = hourHeight * (slot.startTimeMillis / MILLIS_IN_HOUR).toInt() + hourHeight / 2
 
     Column {
         Spacer(modifier = Modifier.height(yOffset))

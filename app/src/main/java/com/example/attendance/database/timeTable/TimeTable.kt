@@ -20,7 +20,7 @@ import androidx.room.PrimaryKey
 data class TimeTable(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val subjectId: Long,
+    val subjectId: Long?,
     val day: Int,
     val startTimeMillis: Long,
     val endTimeMillis: Long
