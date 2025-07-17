@@ -3,6 +3,7 @@ package com.example.attendance.homeScreen.timeTableScreen
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,7 +28,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
@@ -42,6 +43,7 @@ import java.time.DayOfWeek
 
 const val MILLIS_IN_HOUR = 3600000L
 const val MILLIS_IN_DAY = 86400000L
+const val MILLIS_IN_MINUTE = 60000L
 
 @Composable
 fun TimeTableDay(
@@ -195,7 +197,7 @@ fun TimeLineGrid(
                 val yOffset = (hourHeight * (i + 0.5f)).toPx()
                 drawLine(
                     color = lineColor,
-                    start = Offset(xOffset.toPx(), yOffset),
+                    start = Offset((xOffset * 0.9f).toPx(), yOffset),
                     end = Offset(size.width, yOffset),
                     strokeWidth = lineWidth.toPx()
                 )
@@ -227,23 +229,111 @@ fun TimeLineGrid(
 
 @Composable
 fun TimeTableSlot(slot: TimeTable, hourHeight: Dp, xOffset: Dp) {
-    val yOffset = hourHeight * (slot.startTimeMillis / MILLIS_IN_HOUR).toInt() + hourHeight / 2
+    val yOffset = slot.startTimeMillis.millisToDp(hourHeight) + hourHeight / 2f
+    val slotHeight = (slot.endTimeMillis - slot.startTimeMillis).millisToDp(hourHeight)
+    val borderWidth = 2.dp
+
+    val dragHandleSize = 15.dp
+    val dragHandleOffset = 25.dp
 
     Column {
-        Spacer(modifier = Modifier.height(yOffset))
+        Spacer(modifier = Modifier.height(yOffset - dragHandleSize / 2))
 
         Row {
-            Spacer(modifier = Modifier.width(xOffset))
+            Spacer(modifier = Modifier.width(xOffset - borderWidth / 2))
 
             Box (
                 modifier = Modifier
                     .weight(1f)
-                    .height(hourHeight)
-                    .background(Color.Red)
+                    .height(slotHeight + dragHandleSize),
+                contentAlignment = Alignment.Center
             ) {
+                // adding the 2 drag handles
 
+                Row {
+                    Spacer(modifier = Modifier.width(dragHandleOffset))
+
+                    Column {
+                        DragHandle(
+                            modifier = Modifier,
+                            size = dragHandleSize
+                        )
+
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Column {
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        DragHandle(
+                            modifier = Modifier,
+                            size = dragHandleSize
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(dragHandleOffset))
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(hourHeight + borderWidth)
+                        .border(
+                            width = borderWidth,
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = MaterialTheme.shapes.medium
+                        )
+                ) {
+                    // starting time
+                    Text(
+                        text = slot.startTimeMillis.toHours(),
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize
+                    )
+                }
             }
         }
+    }
+}
+
+fun Long.millisToDp(hourHeight: Dp): Dp {
+    var offset = (this / MILLIS_IN_HOUR).toInt() * hourHeight
+    offset += ((this % MILLIS_IN_HOUR).toFloat() / MILLIS_IN_MINUTE.toFloat()) * hourHeight / 60f
+    return offset
+}
+
+@Composable
+fun DragHandle(
+    modifier: Modifier = Modifier,
+    size: Dp
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .background(
+                color = MaterialTheme.colorScheme.primary,
+                shape = CircleShape
+            )
+            .border(
+                width = size / 5,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                shape = CircleShape
+            )
+    )
+}
+
+fun Long.toHours(): String {
+    val hours = this / MILLIS_IN_HOUR
+    var minutes = "${(this % MILLIS_IN_HOUR) / MILLIS_IN_MINUTE}"
+    if (minutes.length == 1) {
+        minutes = "0$minutes"
+    }
+
+    if (hours <= 12) {
+        return "$hours:$minutes am"
+    } else {
+        return "${hours - 12}:$minutes pm"
     }
 }
 
