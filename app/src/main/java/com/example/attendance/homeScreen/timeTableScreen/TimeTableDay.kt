@@ -1,12 +1,9 @@
 package com.example.attendance.homeScreen.timeTableScreen
 
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.calculateCentroid
-import androidx.compose.foundation.gestures.calculateZoom
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,11 +28,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import com.example.attendance.database.timeTable.TimeTable
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.coroutines.launch
@@ -86,31 +87,74 @@ fun TimeLineGrid(
 
     val lineWidth = 1.5.dp
     val animationScope = rememberCoroutineScope()
+    val density = LocalDensity.current
+
+    val tapTimeOutMs = 100L
 
     Box (
         modifier = Modifier
             .pointerInput(Unit) {
-                awaitEachGesture {
-                    do {
+                awaitPointerEventScope {
+                    var pointerDownTime: Long = 0
+                    while(true) {
                         val event = awaitPointerEvent()
-                        val zoom = event.calculateZoom()
-                        val centroid = event.calculateCentroid()
-                        if (zoom != 1f && centroid != Offset.Unspecified) {
-                            val newHourHeight = (hourHeight * zoom).coerceIn(hourHeightRange)
-                            val effectiveZoom = newHourHeight / hourHeight
+                        val pointers = event.changes
 
-                            // scrolling so that zoom is done at the centroid
-                            animationScope.launch {
-                                scrollState.scrollBy(value = centroid.y * (effectiveZoom - 1f))
+                        // identifying tap gesture
+                        if (pointers.size == 1) {
+                            if (pointers[0].changedToDown()) {
+                                pointerDownTime = System.currentTimeMillis()
+                            } else if (pointers[0].changedToUp() &&
+                                System.currentTimeMillis() - pointerDownTime < tapTimeOutMs &&
+                                pointers[0].positionChange() == Offset.Zero
+                                ) {
+                                Log.i("", "tap tap tap ${pointers[0].position}")
+
+                                // consuming the tap gesture
+                                event.changes.forEach { it.consume() }
+                            }
+                        }
+                        // identifying zoom gesture
+                        else if (pointers.size == 2) {
+                            pointerDownTime = 0
+
+                            val a = pointers[0].position
+                            val b = pointers[1].position
+                            val prevA = pointers[0].previousPosition
+                            val prevB = pointers[1].previousPosition
+
+                            if (a == Offset.Unspecified ||
+                                b == Offset.Unspecified ||
+                                prevA == Offset.Unspecified ||
+                                prevB == Offset.Unspecified
+                                ) {
+                                continue
                             }
 
-                            // changing the size of hourHeight
-                            viewModel.setTimeLineHourHeight(newHourHeight)
+                            val zoom = (a.y - b.y) / (prevA.y - prevB.y)
+                            val newHourHeight = (zoom * hourHeight).coerceIn(hourHeightRange)
+                            val effectiveZoom = newHourHeight / hourHeight
+                            val centroid = (a.y + b.y) / 2f
+                            val previousCentroid = (prevA.y + prevB.y) / 2f
 
-                            // consuming the events
-                            event.changes.forEach { it.consume() }
+                            if (zoom != 1f) {
+                                println(scrollState.value / (hourHeight.toPx() * 25))
+                                animationScope.launch {
+                                    scrollState.scrollTo (
+                                        scrollState.value + (
+                                                previousCentroid * (effectiveZoom - 1) + (previousCentroid - centroid) / effectiveZoom
+                                                ).toInt()
+                                    )
+                                }
+
+                                // modifying the hourHeight
+                                viewModel.setTimeLineHourHeight(newHourHeight)
+
+                                // consuming the zoom gesture
+                                event.changes.forEach { it.consume() }
+                            }
                         }
-                    } while (event.changes.any() {it.pressed})
+                    }
                 }
             },
         contentAlignment = Alignment.TopStart
