@@ -380,10 +380,10 @@ class AttendanceViewModel(
      * This function first validates if the `day` property of the `timeTable` is within the valid range (0-6).
      * If the day is out of bounds, it throws an [IndexOutOfBoundsException].
      *
-     * It then launches a coroutine in the `viewModelScope` to delete the existing timetable entry
-     * from the database using `databaseRepository.deleteTimeTable(timeTable)`.
+     * It then launches a coroutine in the `viewModelScope` to update the timetable entry
+     * in the database using `databaseRepository.updateTimeTable(timeTable)`.
      *
-     * After deleting from the database, it finds the index of the old timetable entry in the local `timeTableList`
+     * After updating in the database, it finds the index of the old timetable entry in the local `timeTableList`
      * based on its `id` and `day`.
      * If the entry is found (index is not -1), it replaces the old entry at that index with the
      * updated `timeTable` object.
@@ -397,8 +397,9 @@ class AttendanceViewModel(
         }
 
         viewModelScope.launch {
-            databaseRepository.deleteTimeTable(timeTable)
+            databaseRepository.updateTimeTable(timeTable)
         }
+
         val index = timeTableList[timeTable.day].indexOfFirst { it.id == timeTable.id }
         if (index != -1) {
             timeTableList[timeTable.day][index] = timeTable

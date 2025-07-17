@@ -1,11 +1,10 @@
 package com.example.attendance.homeScreen.timeTableScreen
 
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.DraggableState
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -41,20 +40,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.database.timeTable.TimeTable
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.coroutines.launch
@@ -239,7 +237,7 @@ fun TimeLineGrid(
 
         // showing oll the time-table slots on top of the grid as boxes
         val timeTableList = viewModel.timeTableList[day.ordinal]
-
+        Log.i("slot length", "${timeTableList.size}")
         for (slot in timeTableList) {
             TimeTableSlot(slot, hourHeight, xOffset, viewModel)
         }
@@ -260,6 +258,21 @@ fun TimeTableSlot(
     val dragHandleSize = 15.dp
     val dragHandleOffset = 25.dp
 
+    val density = LocalDensity.current
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteDialog) {
+        SlotDeleteDialog (
+            delete = {
+                viewModel.deleteTimeTable(slot)
+            },
+            hideDialog = {
+                showDeleteDialog = false
+            }
+        )
+    }
+
     Column {
         Spacer(modifier = Modifier.height(yOffset - dragHandleSize / 2))
 
@@ -271,14 +284,29 @@ fun TimeTableSlot(
                     .height(slotHeight + dragHandleSize),
                 contentAlignment = Alignment.Center
             ) {
-                // adding the 2 drag handles
+                // top and bottom drag handles
 
                 Row {
                     Spacer(modifier = Modifier.width(dragHandleOffset))
 
+                    val startTimeDraggableState = rememberDraggableState {
+                        val drag = with (density) { it.toDp() }
+                        val offsetMillis = drag.toMillis(hourHeight)
+                        viewModel.updateTimeTable(
+                            slot.copy(
+                                startTimeMillis = (slot.startTimeMillis + offsetMillis)
+                                    .coerceIn(0..slot.endTimeMillis)
+                            )
+                        )
+                    }
+
                     Column {
                         DragHandle(
-                            modifier = Modifier,
+                            modifier = Modifier
+                                .draggable(
+                                    state = startTimeDraggableState,
+                                    orientation = Orientation.Vertical
+                                ),
                             size = dragHandleSize
                         )
 
@@ -287,34 +315,52 @@ fun TimeTableSlot(
 
                     Spacer(modifier = Modifier.weight(1f))
 
+                    val endTimeDraggableState = rememberDraggableState {
+                        val drag = with (density) { it.toDp() }
+                        val offsetMillis = drag.toMillis(hourHeight)
+                        viewModel.updateTimeTable(
+                            slot.copy(
+                                endTimeMillis = (slot.endTimeMillis + offsetMillis)
+                                    .coerceIn(slot.startTimeMillis..MILLIS_IN_DAY)
+                            )
+                        )
+                    }
+
                     Column {
                         Spacer(modifier = Modifier.weight(1f))
 
                         DragHandle(
-                            modifier = Modifier,
+                            modifier = Modifier
+                                .draggable(
+                                    state = endTimeDraggableState,
+                                    orientation = Orientation.Vertical
+                                ),
                             size = dragHandleSize
                         )
                     }
 
                     Spacer(modifier = Modifier.width(dragHandleOffset))
                 }
-                
-                val density = LocalDensity.current
+
                 val draggableState = rememberDraggableState {
                     val drag = with (density) { it.toDp() }
                     val offsetMillis = drag.toMillis(hourHeight)
-                    viewModel.updateTimeTable(
-                        slot.copy(
-                            startTimeMillis = slot.startTimeMillis + offsetMillis,
-                            endTimeMillis = slot.endTimeMillis + offsetMillis
+                    if (slot.startTimeMillis + offsetMillis > 0 &&
+                        slot.endTimeMillis + offsetMillis <= MILLIS_IN_DAY) {
+                        viewModel.updateTimeTable(
+                            slot.copy(
+                                startTimeMillis = slot.startTimeMillis + offsetMillis,
+                                endTimeMillis = slot.endTimeMillis + offsetMillis
+                            )
                         )
-                    )
+                    }
                 }
-                
+
+                // the box that represents the slot
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(hourHeight + borderWidth)
+                        .height(slotHeight + borderWidth)
                         .border(
                             width = borderWidth,
                             color = MaterialTheme.colorScheme.primary,
@@ -334,8 +380,9 @@ fun TimeTableSlot(
                     ) {
                         Text(
                             text = slot.startTimeMillis.toHours(),
-                            fontSize = MaterialTheme.typography.bodySmall.fontSize
-                            )
+                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                            fontFamily = FontFamily.Monospace
+                        )
                     }
 
                     SubjectSelectorDropDown()
@@ -344,21 +391,16 @@ fun TimeTableSlot(
 
                     LocationSelectorDropDown()
 
-                    DeleteButton(
-                        delete = {
-                            viewModel.deleteTimeTable(slot)
-                        }
-                    )
-
                     Column (
                         modifier = Modifier
                             .fillMaxHeight()
                             .padding(bottom = dragHandleSize / 2, end = borderWidth + 5.dp),
-                        verticalArrangement = Arrangement.Bottom
+                        verticalArrangement = Arrangement.Bottom,
                     ) {
                         Text(
                             text = slot.endTimeMillis.toHours(),
-                            fontSize = MaterialTheme.typography.bodySmall.fontSize
+                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                            fontFamily = FontFamily.Monospace
                         )
                     }
                 }
@@ -379,32 +421,6 @@ fun SubjectSelectorDropDown() {
 @Composable
 fun LocationSelectorDropDown() {
 
-}
-
-@Composable
-fun DeleteButton(
-    delete: () -> Unit
-) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
-    IconButton(
-        onClick = {
-            showDeleteDialog = true
-        }
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Delete,
-            tint = MaterialTheme.colorScheme.error,
-            contentDescription = "delete slot button"
-        )
-
-        if (showDeleteDialog) {
-            SlotDeleteDialog(
-                delete = delete
-            ) {
-                showDeleteDialog = false
-            }
-        }
-    }
 }
 
 @Composable
