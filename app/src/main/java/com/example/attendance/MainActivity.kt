@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
         db = Room.databaseBuilder(
                 applicationContext,
                 AppDatabase::class.java,
-                "subject_database"
+                "appDataBase"
             ).fallbackToDestructiveMigration(true).build()
 
         setContent {
@@ -46,7 +46,8 @@ class MainActivity : ComponentActivity() {
                         AttendanceViewModel(
                             DatabaseRepository(
                                 db.attendanceDao(),
-                                db.subjectDao()
+                                db.subjectDao(),
+                                db.timetableDao()
                             ),
                             PreferencesRepository(this@MainActivity))
                     }

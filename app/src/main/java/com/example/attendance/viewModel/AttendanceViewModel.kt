@@ -1,6 +1,8 @@
 package com.example.attendance.viewModel
 
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -9,6 +11,7 @@ import com.example.attendance.database.DatabaseRepository
 import com.example.attendance.preferences.PreferencesRepository
 import com.example.attendance.database.subject.Subject
 import com.example.attendance.database.subject.SubjectUiModel
+import com.example.attendance.database.timeTable.TimeTable
 import com.example.attendance.ui.theme.AppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,9 +34,11 @@ class AttendanceViewModel(
     // block to load the subject list from the database and kotlin initializes variables, and runs
     // the init block in textual order
     val subjectList = mutableStateListOf<SubjectUiModel>()
+    val timeTableList = mutableStateListOf<SnapshotStateList<TimeTable>>()
 
     init {
         loadSubjectList()
+        loadTimeTableList()
     }
 
     val timeLineHourHeight = preferencesRepository.getTimeLineHourHeight()
@@ -203,8 +208,15 @@ class AttendanceViewModel(
 
     fun loadSubjectList() {
         viewModelScope.launch(Dispatchers.IO) {
-            subjectList.clear()
             subjectList.addAll(databaseRepository.getAllSubjects())
+        }
+    }
+
+    fun loadTimeTableList() {
+        viewModelScope.launch(Dispatchers.IO) {
+            for (day in 0..6) {
+                timeTableList.add(databaseRepository.getTimeTableForDay(day).toMutableStateList())
+            }
         }
     }
 
@@ -337,5 +349,31 @@ class AttendanceViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = 0
         )
+    }
+
+    fun addTimeTable(timeTable: TimeTable) {
+        if (timeTable.day !in 0..6) {
+            throw IndexOutOfBoundsException("Day must be between 0 and 6")
+        }
+
+        viewModelScope.launch {
+            val generatedId = withContext(Dispatchers.IO) {
+                databaseRepository.insertTimeTable(timeTable)
+            }
+
+            timeTableList[timeTable.day].add(timeTable.copy(id = generatedId))
+        }
+    }
+
+    fun deleteTimeTable(timeTable: TimeTable) {
+        viewModelScope.launch {
+            databaseRepository.deleteTimeTable(timeTable)
+        }
+    }
+
+    fun updateTimeTable(timeTable: TimeTable) {
+        viewModelScope.launch {
+            databaseRepository.deleteTimeTable(timeTable)
+        }
     }
 }

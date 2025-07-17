@@ -2,15 +2,20 @@ package com.example.attendance.homeScreen.timeTableScreen
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -25,11 +30,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.attendance.database.timeTable.TimeTable
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
@@ -43,7 +50,6 @@ fun TimeTableDay(
     val xOffsetRatio = 0.15f
     val density = LocalDensity.current
     val scrollState = rememberScrollState()
-    val animationScope = rememberCoroutineScope()
 
     Box (
         modifier = Modifier
@@ -60,33 +66,18 @@ fun TimeTableDay(
             parentWidth * xOffsetRatio,
             scrollState,
             parentWidth / 10 .. parentWidth / 2,
+            day,
             viewModel
         )
     }
 }
 
-/**
- * Composable function that displays a timeline grid with hours.
- *
- * This function creates a visual representation of a 24-hour timeline,
- * allowing users to zoom in and out to adjust the height of each hour slot.
- * It draws horizontal lines for each half-hour and a vertical line to separate
- * the hour labels from the main grid area.
- *
- * The zoom functionality is implemented using a `pointerInput` modifier that detects
- * pinch gestures. When a zoom gesture occurs, the `hourHeight` is adjusted,
- * and the `scrollState` is updated to keep the zoom centered around the gesture's centroid.
- *
- * @param xOffset The horizontal offset for the timeline, determining the width of the hour label column.
- * @param scrollState The [ScrollState] to control the vertical scrolling of the timeline.
- * @param hourHeightRange The allowable range for the height of each hour slot.
- * @param viewModel The [AttendanceViewModel] used to manage the state of the `hourHeight`.
- */
 @Composable
 fun TimeLineGrid(
     xOffset: Dp,
     scrollState: ScrollState,
     hourHeightRange: ClosedRange<Dp>,
+    day: DayOfWeek,
     viewModel: AttendanceViewModel
 ) {
     val hourHeight by viewModel.timeLineHourHeight.collectAsState()
@@ -104,15 +95,13 @@ fun TimeLineGrid(
                         val event = awaitPointerEvent()
                         val zoom = event.calculateZoom()
                         val centroid = event.calculateCentroid()
+                        if (zoom != 1f && centroid != Offset.Unspecified) {
+                            val newHourHeight = (hourHeight * zoom).coerceIn(hourHeightRange)
+                            val effectiveZoom = newHourHeight / hourHeight
 
-                        val newHourHeight = (hourHeight * zoom).coerceIn(hourHeightRange)
-                        val effectiveZoom = newHourHeight / hourHeight
-
-                        if (effectiveZoom != 1f && centroid != Offset.Unspecified) {
                             // scrolling so that zoom is done at the centroid
                             animationScope.launch {
-                                scrollState.scrollTo(scrollState.value +
-                                        (centroid.y * (effectiveZoom - 1f)).toInt())
+                                scrollState.scrollBy(value = centroid.y * (effectiveZoom - 1f))
                             }
 
                             // changing the size of hourHeight
@@ -127,6 +116,8 @@ fun TimeLineGrid(
         contentAlignment = Alignment.TopStart
     ) {
         val canvasHeight = hourHeight * 25
+
+        // canvas is used to draw the grid
         Canvas(
             modifier = Modifier
                 .height(canvasHeight)
@@ -150,6 +141,7 @@ fun TimeLineGrid(
             }
         }
 
+        // used to write the time at left hand side
         Column (
             modifier = Modifier
                 .size(width = xOffset, height = canvasHeight)
@@ -160,6 +152,35 @@ fun TimeLineGrid(
                 (1..12).forEach { hour ->
                     GridHourText("$hour $it", xOffset, hourHeight)
                 }
+            }
+        }
+
+        // showing oll the time-table slots on top of the grid as boxes
+        val timeTableList = viewModel.timeTableList[day.ordinal]
+
+        for (slot in timeTableList) {
+            TimeTableSlot(slot, hourHeight, xOffset)
+        }
+    }
+}
+
+@Composable
+fun TimeTableSlot(slot: TimeTable, hourHeight: Dp, xOffset: Dp) {
+    val yOffset = hourHeight * (slot.startTimeMillis / 3600000).toInt()
+
+    Column {
+        Spacer(modifier = Modifier.height(yOffset))
+
+        Row {
+            Spacer(modifier = Modifier.width(xOffset))
+
+            Box (
+                modifier = Modifier
+                    .weight(1f)
+                    .height(hourHeight)
+                    .background(Color.Red)
+            ) {
+
             }
         }
     }
