@@ -4,18 +4,32 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.DraggableState
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,14 +42,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.database.timeTable.TimeTable
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.coroutines.launch
@@ -222,13 +241,18 @@ fun TimeLineGrid(
         val timeTableList = viewModel.timeTableList[day.ordinal]
 
         for (slot in timeTableList) {
-            TimeTableSlot(slot, hourHeight, xOffset)
+            TimeTableSlot(slot, hourHeight, xOffset, viewModel)
         }
     }
 }
 
 @Composable
-fun TimeTableSlot(slot: TimeTable, hourHeight: Dp, xOffset: Dp) {
+fun TimeTableSlot(
+    slot: TimeTable,
+    hourHeight: Dp,
+    xOffset: Dp,
+    viewModel: AttendanceViewModel
+) {
     val yOffset = slot.startTimeMillis.millisToDp(hourHeight) + hourHeight / 2f
     val slotHeight = (slot.endTimeMillis - slot.startTimeMillis).millisToDp(hourHeight)
     val borderWidth = 2.dp
@@ -241,7 +265,6 @@ fun TimeTableSlot(slot: TimeTable, hourHeight: Dp, xOffset: Dp) {
 
         Row {
             Spacer(modifier = Modifier.width(xOffset - borderWidth / 2))
-
             Box (
                 modifier = Modifier
                     .weight(1f)
@@ -275,7 +298,19 @@ fun TimeTableSlot(slot: TimeTable, hourHeight: Dp, xOffset: Dp) {
 
                     Spacer(modifier = Modifier.width(dragHandleOffset))
                 }
-
+                
+                val density = LocalDensity.current
+                val draggableState = rememberDraggableState {
+                    val drag = with (density) { it.toDp() }
+                    val offsetMillis = drag.toMillis(hourHeight)
+                    viewModel.updateTimeTable(
+                        slot.copy(
+                            startTimeMillis = slot.startTimeMillis + offsetMillis,
+                            endTimeMillis = slot.endTimeMillis + offsetMillis
+                        )
+                    )
+                }
+                
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -285,16 +320,134 @@ fun TimeTableSlot(slot: TimeTable, hourHeight: Dp, xOffset: Dp) {
                             color = MaterialTheme.colorScheme.primary,
                             shape = MaterialTheme.shapes.medium
                         )
+                        .draggable(
+                            state = draggableState,
+                            orientation = Orientation.Vertical
+                        ),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // starting time
-                    Text(
-                        text = slot.startTimeMillis.toHours(),
-                        fontSize = MaterialTheme.typography.bodySmall.fontSize
+                    Column (
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(top = dragHandleSize / 2, start = borderWidth + 5.dp),
+                        verticalArrangement = Arrangement.Top
+                    ) {
+                        Text(
+                            text = slot.startTimeMillis.toHours(),
+                            fontSize = MaterialTheme.typography.bodySmall.fontSize
+                            )
+                    }
+
+                    SubjectSelectorDropDown()
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    LocationSelectorDropDown()
+
+                    DeleteButton(
+                        delete = {
+                            viewModel.deleteTimeTable(slot)
+                        }
                     )
+
+                    Column (
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(bottom = dragHandleSize / 2, end = borderWidth + 5.dp),
+                        verticalArrangement = Arrangement.Bottom
+                    ) {
+                        Text(
+                            text = slot.endTimeMillis.toHours(),
+                            fontSize = MaterialTheme.typography.bodySmall.fontSize
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+fun Dp.toMillis(hourHeight: Dp): Long {
+    return ((this / hourHeight) * MILLIS_IN_HOUR).toLong()
+}
+
+@Composable
+fun SubjectSelectorDropDown() {
+
+}
+
+@Composable
+fun LocationSelectorDropDown() {
+
+}
+
+@Composable
+fun DeleteButton(
+    delete: () -> Unit
+) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    IconButton(
+        onClick = {
+            showDeleteDialog = true
+        }
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Delete,
+            tint = MaterialTheme.colorScheme.error,
+            contentDescription = "delete slot button"
+        )
+
+        if (showDeleteDialog) {
+            SlotDeleteDialog(
+                delete = delete
+            ) {
+                showDeleteDialog = false
+            }
+        }
+    }
+}
+
+@Composable
+fun SlotDeleteDialog(
+    delete: () -> Unit,
+    hideDialog: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = hideDialog,
+        confirmButton =  {
+            FilledTonalButton(
+                onClick = {
+                    delete()
+                    hideDialog()
+                }
+            ) {
+                Text(text = "Delete")
+            }
+        },
+        dismissButton = {
+            FilledTonalButton(
+                onClick = {
+                    hideDialog()
+                }
+            ) {
+                Text(text = "Cancel")
+            }
+        },
+        title = {
+            Text(
+                text = "Delete slot?",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Text(
+                text = "Are you sure you want to delete slot? " +
+                        "This action cannot be undone",
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    )
 }
 
 fun Long.millisToDp(hourHeight: Dp): Dp {
@@ -329,8 +482,9 @@ fun Long.toHours(): String {
     if (minutes.length == 1) {
         minutes = "0$minutes"
     }
-
-    if (hours <= 12) {
+    if (hours == 0L) {
+        return "12:$minutes am"
+    } else if (hours <= 12) {
         return "$hours:$minutes am"
     } else {
         return "${hours - 12}:$minutes pm"

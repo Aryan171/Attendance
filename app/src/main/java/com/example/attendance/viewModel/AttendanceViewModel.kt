@@ -74,7 +74,7 @@ class AttendanceViewModel(
             databaseRepository.clearAllAttendance(subject.id)
         }
 
-        updateSubject(subject.copy(
+        updateSubjectInMemory(subject.copy(
             presentDays = 0,
             absentDays = 0,
             attendance = mutableMapOf()
@@ -101,7 +101,7 @@ class AttendanceViewModel(
             updatedPresentDays++
         }
         subject.attendance[date] = true
-        updateSubject(subject.copy(
+        updateSubjectInMemory(subject.copy(
             presentDays = updatedPresentDays,
             absentDays = updatedAbsentDays,
             attendance = subject.attendance
@@ -127,7 +127,7 @@ class AttendanceViewModel(
             updatedAbsentDays--
         }
         subject.attendance.remove(date)
-        updateSubject(subject.copy(
+        updateSubjectInMemory(subject.copy(
             presentDays = updatedPresentDays,
             absentDays = updatedAbsentDays,
             attendance = subject.attendance
@@ -154,7 +154,7 @@ class AttendanceViewModel(
             updatedAbsentDays++
         }
         subject.attendance[date] = false
-        updateSubject(subject.copy(
+        updateSubjectInMemory(subject.copy(
             presentDays = updatedPresentDays,
             absentDays = updatedAbsentDays,
             attendance = subject.attendance
@@ -190,7 +190,7 @@ class AttendanceViewModel(
      *
      * @param subject The [SubjectUiModel] object containing the updated information for the subject.
      */
-    fun updateSubject(subject: SubjectUiModel) {
+    fun updateSubjectInMemory(subject: SubjectUiModel) {
         val index = subjectList.indexOfFirst { it.id == subject.id }
         if (index != -1) {
             subjectList[index] = subject
@@ -308,7 +308,7 @@ class AttendanceViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             databaseRepository.renameSubject(subject.id, name)
         }
-        updateSubject(subject.copy(name = name))
+        updateSubjectInMemory(subject.copy(name = name))
     }
 
     /**
@@ -369,11 +369,39 @@ class AttendanceViewModel(
         viewModelScope.launch {
             databaseRepository.deleteTimeTable(timeTable)
         }
+        timeTableList[timeTable.day].removeIf {
+            it.id == timeTable.id
+        }
     }
 
+    /**
+     * Updates an existing entry in the timetable.
+     *
+     * This function first validates if the `day` property of the `timeTable` is within the valid range (0-6).
+     * If the day is out of bounds, it throws an [IndexOutOfBoundsException].
+     *
+     * It then launches a coroutine in the `viewModelScope` to delete the existing timetable entry
+     * from the database using `databaseRepository.deleteTimeTable(timeTable)`.
+     *
+     * After deleting from the database, it finds the index of the old timetable entry in the local `timeTableList`
+     * based on its `id` and `day`.
+     * If the entry is found (index is not -1), it replaces the old entry at that index with the
+     * updated `timeTable` object.
+     *
+     * @param timeTable The [TimeTable] object containing the updated information for the timetable entry.
+     * @throws IndexOutOfBoundsException if `timeTable.day` is not between 0 and 6 (inclusive).
+     */
     fun updateTimeTable(timeTable: TimeTable) {
+        if (timeTable.day !in 0..6) {
+            throw IndexOutOfBoundsException("day should be in bound 0..6")
+        }
+
         viewModelScope.launch {
             databaseRepository.deleteTimeTable(timeTable)
+        }
+        val index = timeTableList[timeTable.day].indexOfFirst { it.id == timeTable.id }
+        if (index != -1) {
+            timeTableList[timeTable.day][index] = timeTable
         }
     }
 }
