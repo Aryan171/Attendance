@@ -1,6 +1,5 @@
 package com.example.attendance.homeScreen.timeTableScreen
 
-import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -9,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +32,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -237,9 +238,8 @@ fun TimeLineGrid(
 
         // showing oll the time-table slots on top of the grid as boxes
         val timeTableList = viewModel.timeTableList[day.ordinal]
-        Log.i("slot length", "${timeTableList.size}")
         for (slot in timeTableList) {
-            TimeTableSlot(slot, hourHeight, xOffset, viewModel)
+            TimeTableSlot(slot, hourHeight, xOffset, scrollState, viewModel)
         }
     }
 }
@@ -249,8 +249,31 @@ fun TimeTableSlot(
     slot: TimeTable,
     hourHeight: Dp,
     xOffset: Dp,
+    scrollState: ScrollState,
     viewModel: AttendanceViewModel
 ) {
+    val timeTableMutatedTrigger by viewModel.timeTableListUpdatedTrigger.collectAsState()
+    var bounds by remember { mutableStateOf(0L..MILLIS_IN_DAY) }
+
+    LaunchedEffect(timeTableMutatedTrigger) {
+        // recalculating the bounds
+        val slotList = viewModel.timeTableList[slot.day]
+        var minStart = 0L
+        var maxEnd = MILLIS_IN_DAY
+
+        for (s in slotList) {
+            if (s.id == slot.id) continue
+
+            if (s.endTimeMillis <= slot.startTimeMillis) {
+                minStart = maxOf(minStart, s.endTimeMillis)
+            } else if (s.startTimeMillis >= slot.endTimeMillis) {
+                maxEnd = minOf(maxEnd, s.startTimeMillis)
+            }
+        }
+
+        bounds = minStart..maxEnd
+    }
+
     val yOffset = slot.startTimeMillis.millisToDp(hourHeight) + hourHeight / 2f
     val slotHeight = (slot.endTimeMillis - slot.startTimeMillis).millisToDp(hourHeight)
     val borderWidth = 2.dp
@@ -261,6 +284,8 @@ fun TimeTableSlot(
     val density = LocalDensity.current
 
     var showDeleteDialog by remember { mutableStateOf(false) }
+
+    val animationScope = rememberCoroutineScope()
 
     if (showDeleteDialog) {
         SlotDeleteDialog (
@@ -285,17 +310,22 @@ fun TimeTableSlot(
                     .height(slotHeight + dragHandleCollisionBoxSize),
                 contentAlignment = Alignment.Center
             ) {
-                val draggableState = rememberDraggableState {
-                    val drag = with (density) { it.toDp() }
+                val draggableState = rememberDraggableState { dragPx ->
+                    val drag = with (density) { dragPx.toDp() }
                     val offsetMillis = drag.toMillis(hourHeight)
-                    if (slot.startTimeMillis + offsetMillis > 0 &&
-                        slot.endTimeMillis + offsetMillis <= MILLIS_IN_DAY) {
-                        viewModel.updateTimeTable(
-                            slot.copy(
-                                startTimeMillis = slot.startTimeMillis + offsetMillis,
-                                endTimeMillis = slot.endTimeMillis + offsetMillis
-                            )
-                        )
+
+                    if (
+                        slot.startTimeMillis + offsetMillis in bounds &&
+                        slot.endTimeMillis + offsetMillis in bounds
+                    ) {
+                        viewModel.updateTimeTable(slot.copy(
+                            startTimeMillis = slot.startTimeMillis + offsetMillis,
+                            endTimeMillis = slot.endTimeMillis + offsetMillis
+                        ))
+                    } else {
+                        animationScope.launch {
+                            scrollState.scrollBy(-dragPx)
+                        }
                     }
                 }
 
@@ -383,12 +413,18 @@ fun TimeTableSlot(
                     val startTimeDraggableState = rememberDraggableState {
                         val drag = with (density) { it.toDp() }
                         val offsetMillis = drag.toMillis(hourHeight)
-                        viewModel.updateTimeTable(
-                            slot.copy(
-                                startTimeMillis = (slot.startTimeMillis + offsetMillis)
-                                    .coerceIn(0..slot.endTimeMillis)
+
+                        if (slot.startTimeMillis + offsetMillis in bounds.start..slot.endTimeMillis) {
+                            viewModel.updateTimeTable(
+                                slot.copy(
+                                    startTimeMillis = slot.startTimeMillis + offsetMillis
+                                )
                             )
-                        )
+                        } else {
+                            animationScope.launch {
+                                scrollState.scrollBy(-it)
+                            }
+                        }
                     }
 
                     Column {
@@ -410,12 +446,18 @@ fun TimeTableSlot(
                     val endTimeDraggableState = rememberDraggableState {
                         val drag = with (density) { it.toDp() }
                         val offsetMillis = drag.toMillis(hourHeight)
-                        viewModel.updateTimeTable(
-                            slot.copy(
-                                endTimeMillis = (slot.endTimeMillis + offsetMillis)
-                                    .coerceIn(slot.startTimeMillis..MILLIS_IN_DAY)
+
+                        if (slot.endTimeMillis + offsetMillis in slot.startTimeMillis..bounds.last) {
+                            viewModel.updateTimeTable(
+                                slot.copy(
+                                    endTimeMillis = slot.endTimeMillis + offsetMillis
+                                )
                             )
-                        )
+                        } else {
+                            animationScope.launch {
+                                scrollState.scrollBy(-it)
+                            }
+                        }
                     }
 
                     Column {

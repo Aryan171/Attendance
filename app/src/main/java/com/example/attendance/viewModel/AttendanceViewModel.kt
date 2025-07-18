@@ -8,12 +8,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.attendance.database.DatabaseRepository
-import com.example.attendance.preferences.PreferencesRepository
 import com.example.attendance.database.subject.Subject
 import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.database.timeTable.TimeTable
+import com.example.attendance.preferences.PreferencesRepository
 import com.example.attendance.ui.theme.AppTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -35,6 +36,9 @@ class AttendanceViewModel(
     // the init block in textual order
     val subjectList = mutableStateListOf<SubjectUiModel>()
     val timeTableList = mutableStateListOf<SnapshotStateList<TimeTable>>()
+
+    var timeTableListUpdatedTrigger = MutableStateFlow(false)
+    private set
 
     init {
         loadSubjectList()
@@ -218,6 +222,7 @@ class AttendanceViewModel(
                 timeTableList.add(databaseRepository.getTimeTableForDay(day).toMutableStateList())
             }
         }
+        timeTableListMutated()
     }
 
     fun attendanceRatio(subject: SubjectUiModel, month: Month, year: Int): Float {
@@ -363,6 +368,8 @@ class AttendanceViewModel(
 
             timeTableList[timeTable.day].add(timeTable.copy(id = generatedId))
         }
+
+        timeTableListMutated()
     }
 
     fun deleteTimeTable(timeTable: TimeTable) {
@@ -372,6 +379,7 @@ class AttendanceViewModel(
         timeTableList[timeTable.day].removeIf {
             it.id == timeTable.id
         }
+        timeTableListMutated()
     }
 
     /**
@@ -403,8 +411,13 @@ class AttendanceViewModel(
         val index = timeTableList[timeTable.day].indexOfFirst { it.id == timeTable.id }
         if (index != -1) {
             timeTableList[timeTable.day][index] = timeTable
+            timeTableListMutated()
         }
     }
 
     fun getSubject(subjectId: Long): SubjectUiModel? = subjectList.find { it.id == subjectId }
+
+    fun timeTableListMutated() {
+        timeTableListUpdatedTrigger.value = !timeTableListUpdatedTrigger.value
+    }
 }
