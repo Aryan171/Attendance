@@ -5,6 +5,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -23,12 +24,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,8 +37,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.changedToUp
@@ -255,8 +250,8 @@ fun TimeTableSlot(
     val slotHeight = (slot.endTimeMillis - slot.startTimeMillis).millisToDp(hourHeight)
     val borderWidth = 2.dp
 
-    val dragHandleSize = 15.dp
-    val dragHandleOffset = 25.dp
+    val dragHandleCollisionBoxSize = 50.dp
+    val dragHandleSize = 20.dp
 
     val density = LocalDensity.current
 
@@ -274,74 +269,17 @@ fun TimeTableSlot(
     }
 
     Column {
-        Spacer(modifier = Modifier.height(yOffset - dragHandleSize / 2))
+        Spacer(modifier = Modifier.height(yOffset - dragHandleCollisionBoxSize / 2))
 
         Row {
             Spacer(modifier = Modifier.width(xOffset - borderWidth / 2))
+
             Box (
                 modifier = Modifier
                     .weight(1f)
-                    .height(slotHeight + dragHandleSize),
+                    .height(slotHeight + dragHandleCollisionBoxSize),
                 contentAlignment = Alignment.Center
             ) {
-                // top and bottom drag handles
-
-                Row {
-                    Spacer(modifier = Modifier.width(dragHandleOffset))
-
-                    val startTimeDraggableState = rememberDraggableState {
-                        val drag = with (density) { it.toDp() }
-                        val offsetMillis = drag.toMillis(hourHeight)
-                        viewModel.updateTimeTable(
-                            slot.copy(
-                                startTimeMillis = (slot.startTimeMillis + offsetMillis)
-                                    .coerceIn(0..slot.endTimeMillis)
-                            )
-                        )
-                    }
-
-                    Column {
-                        DragHandle(
-                            modifier = Modifier
-                                .draggable(
-                                    state = startTimeDraggableState,
-                                    orientation = Orientation.Vertical
-                                ),
-                            size = dragHandleSize
-                        )
-
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    val endTimeDraggableState = rememberDraggableState {
-                        val drag = with (density) { it.toDp() }
-                        val offsetMillis = drag.toMillis(hourHeight)
-                        viewModel.updateTimeTable(
-                            slot.copy(
-                                endTimeMillis = (slot.endTimeMillis + offsetMillis)
-                                    .coerceIn(slot.startTimeMillis..MILLIS_IN_DAY)
-                            )
-                        )
-                    }
-
-                    Column {
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        DragHandle(
-                            modifier = Modifier
-                                .draggable(
-                                    state = endTimeDraggableState,
-                                    orientation = Orientation.Vertical
-                                ),
-                            size = dragHandleSize
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(dragHandleOffset))
-                }
-
                 val draggableState = rememberDraggableState {
                     val drag = with (density) { it.toDp() }
                     val offsetMillis = drag.toMillis(hourHeight)
@@ -365,6 +303,9 @@ fun TimeTableSlot(
                             width = borderWidth,
                             color = MaterialTheme.colorScheme.primary,
                             shape = MaterialTheme.shapes.medium
+                        )
+                        .clickable(
+                            onClick = { showDeleteDialog = true }
                         )
                         .draggable(
                             state = draggableState,
@@ -401,6 +342,62 @@ fun TimeTableSlot(
                             text = slot.endTimeMillis.toHours(),
                             fontSize = MaterialTheme.typography.bodySmall.fontSize,
                             fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+
+                // top and bottom drag handles
+
+                Row {
+                    val startTimeDraggableState = rememberDraggableState {
+                        val drag = with (density) { it.toDp() }
+                        val offsetMillis = drag.toMillis(hourHeight)
+                        viewModel.updateTimeTable(
+                            slot.copy(
+                                startTimeMillis = (slot.startTimeMillis + offsetMillis)
+                                    .coerceIn(0..slot.endTimeMillis)
+                            )
+                        )
+                    }
+
+                    Column {
+                        DragHandle(
+                            modifier = Modifier
+                                .draggable(
+                                    state = startTimeDraggableState,
+                                    orientation = Orientation.Vertical
+                                ),
+                            collisionBoxSize = dragHandleCollisionBoxSize,
+                            dragHandleSize = dragHandleSize
+                        )
+
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    val endTimeDraggableState = rememberDraggableState {
+                        val drag = with (density) { it.toDp() }
+                        val offsetMillis = drag.toMillis(hourHeight)
+                        viewModel.updateTimeTable(
+                            slot.copy(
+                                endTimeMillis = (slot.endTimeMillis + offsetMillis)
+                                    .coerceIn(slot.startTimeMillis..MILLIS_IN_DAY)
+                            )
+                        )
+                    }
+
+                    Column {
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        DragHandle(
+                            modifier = Modifier
+                                .draggable(
+                                    state = endTimeDraggableState,
+                                    orientation = Orientation.Vertical
+                                ),
+                            collisionBoxSize = dragHandleCollisionBoxSize,
+                            dragHandleSize = dragHandleSize
                         )
                     }
                 }
@@ -475,18 +472,20 @@ fun Long.millisToDp(hourHeight: Dp): Dp {
 @Composable
 fun DragHandle(
     modifier: Modifier = Modifier,
-    size: Dp
+    collisionBoxSize: Dp,
+    dragHandleSize: Dp
 ) {
     Box(
         modifier = modifier
-            .size(size)
+            .size(collisionBoxSize)
+            .padding((collisionBoxSize - dragHandleSize) / 2)
             .background(
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.inversePrimary,
                 shape = CircleShape
             )
-            .border(
-                width = size / 5,
-                color = MaterialTheme.colorScheme.outlineVariant,
+            .padding(dragHandleSize / 5)
+            .background(
+                color = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             )
     )
