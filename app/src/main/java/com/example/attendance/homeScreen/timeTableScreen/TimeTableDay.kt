@@ -25,7 +25,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,7 +51,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
+import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.database.timeTable.TimeTable
+import com.example.attendance.homeScreen.attendanceScreen.AddSubjectDialog
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
@@ -326,7 +331,33 @@ fun TimeTableSlot(
                         )
                     }
 
-                    SubjectSelectorDropDown()
+                    Box {
+                        var showSubjectSelectorDropDown by remember { mutableStateOf(false) }
+                        val slotSubjectName = remember (slot.subjectId) {
+                            if (slot.subjectId != null) {
+                                viewModel.getSubject(slot.subjectId)?.name ?: "select a subject"
+                            } else {
+                                "select a subject"
+                            }
+                        }
+
+                        Text(
+                            text = slotSubjectName,
+                            modifier = Modifier
+                                .clickable {
+                                    showSubjectSelectorDropDown = true
+                                }
+                        )
+
+                        SubjectSelectorDropDown(
+                            slot = slot,
+                            viewModel = viewModel,
+                            expanded = showSubjectSelectorDropDown,
+                            hideDropdownMenu = {
+                                showSubjectSelectorDropDown = false
+                            }
+                        )
+                    }
 
                     Spacer(modifier = Modifier.weight(1f))
 
@@ -411,8 +442,55 @@ fun Dp.toMillis(hourHeight: Dp): Long {
 }
 
 @Composable
-fun SubjectSelectorDropDown() {
+fun SubjectSelectorDropDown (
+    slot: TimeTable,
+    viewModel: AttendanceViewModel,
+    expanded: Boolean,
+    hideDropdownMenu: () -> Unit
+) {
+    val subjects =  viewModel.subjectList
+    val scrollState  = rememberScrollState()
 
+    DropdownMenu (
+        expanded = expanded,
+        onDismissRequest = hideDropdownMenu,
+        shape = MaterialTheme.shapes.large,
+        scrollState = scrollState
+    ) {
+        var showAddSubjectDialog by remember { mutableStateOf(false) }
+        AddSubjectDialog(
+            showDialog = showAddSubjectDialog,
+            addSubject = {
+                viewModel.addSubject(SubjectUiModel(name = it))
+            },
+            hideDialog = {
+                showAddSubjectDialog = false
+            }
+        )
+
+        DropdownMenuItem(
+            text = { Text("Add new subject") },
+            onClick = {
+                showAddSubjectDialog = true
+            }
+        )
+
+        HorizontalDivider()
+
+        for (subject in subjects) {
+            if (subject.id == slot.subjectId) {
+                continue
+            }
+
+            DropdownMenuItem(
+                text = { Text(subject.name) },
+                onClick = {
+                    viewModel.updateTimeTable(slot.copy(subjectId = subject.id))
+                    hideDropdownMenu()
+                }
+            )
+        }
+    }
 }
 
 @Composable
@@ -455,7 +533,7 @@ fun SlotDeleteDialog(
         },
         text = {
             Text(
-                text = "Are you sure you want to delete slot? " +
+                text = "Are you sure you want to delete this slot? " +
                         "This action cannot be undone",
                 modifier = Modifier.fillMaxWidth()
             )
@@ -497,12 +575,12 @@ fun Long.toHours(): String {
     if (minutes.length == 1) {
         minutes = "0$minutes"
     }
-    if (hours == 0L) {
-        return "12:$minutes am"
+    return if (hours == 0L) {
+        "12:$minutes am"
     } else if (hours <= 12) {
-        return "$hours:$minutes am"
+        "$hours:$minutes am"
     } else {
-        return "${hours - 12}:$minutes pm"
+        "${hours - 12}:$minutes pm"
     }
 }
 

@@ -405,4 +405,6 @@ class AttendanceViewModel(
             timeTableList[timeTable.day][index] = timeTable
         }
     }
+
+    fun getSubject(subjectId: Long): SubjectUiModel? = subjectList.find { it.id == subjectId }
 }
