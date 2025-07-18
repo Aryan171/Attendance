@@ -57,6 +57,7 @@ import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.database.timeTable.TimeTable
 import com.example.attendance.homeScreen.attendanceScreen.AddSubjectDialog
 import com.example.attendance.viewModel.AttendanceViewModel
+import kotlinx.coroutines.flow.compose
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import kotlin.math.max
@@ -219,9 +220,140 @@ fun TimeLineGrid(
         HoursLabelColumn(canvasHeight, hourHeight, xOffset)
 
         // showing all the time-table slots in front of the grid
-        val timeTableList = viewModel.timeTableList[day.ordinal]
-        for (slot in timeTableList) {
-            TimeTableSlot(slot, hourHeight, xOffset, scrollState, viewModel)
+        val dayTimeTable = viewModel.timeTableList[day.ordinal]
+
+        val dragHandleSize = 20.dp
+        val dragHandleCollisionBoxSize = 50.dp
+
+        val timeTableMutatedTrigger by viewModel.timeTableListUpdatedTrigger.collectAsState()
+
+        // recalculating the bounds when timeTableList is mutated
+        LaunchedEffect(timeTableMutatedTrigger) {
+            for (slot in dayTimeTable) {
+                val slotList = viewModel.timeTableList[slot.day]
+                var minStart = 0L
+                var maxEnd = MILLIS_IN_DAY
+
+                for (s in slotList) {
+                    if (s.id == slot.id) continue
+
+                    if (s.endTimeMillis <= slot.startTimeMillis) {
+                        minStart = maxOf(minStart, s.endTimeMillis)
+                    } else if (s.startTimeMillis >= slot.endTimeMillis) {
+                        maxEnd = minOf(maxEnd, s.startTimeMillis)
+                    }
+                }
+
+                viewModel.setSlotBound(slot.id, minStart..maxEnd)
+            }
+        }
+
+        for (slot in dayTimeTable) {
+            TimeTableSlot(slot, hourHeight, xOffset, scrollState, dragHandleSize, viewModel)
+        }
+
+        for (slot in dayTimeTable) {
+            SlotDragHandles(
+                slot,
+                xOffset,
+                hourHeight,
+                scrollState,
+                dragHandleSize,
+                dragHandleCollisionBoxSize,
+                viewModel
+            )
+        }
+    }
+}
+
+@Composable
+fun SlotDragHandles(
+    slot: TimeTable,
+    xOffset: Dp,
+    hourHeight: Dp,
+    scrollState: ScrollState,
+    dragHandleSize: Dp,
+    dragHandleCollisionBoxSize: Dp,
+    viewModel: AttendanceViewModel
+) {
+    val yOffset = slot.startTimeMillis.millisToDp(hourHeight) + hourHeight / 2f
+    val animationScope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    val slotHeight = (slot.endTimeMillis - slot.startTimeMillis).millisToDp(hourHeight)
+    val slotBounds by viewModel.slotBounds.collectAsState()
+
+    val bounds = slotBounds[slot.id] ?: 0L..MILLIS_IN_DAY
+
+    Column {
+        Spacer(modifier = Modifier.height(yOffset - dragHandleCollisionBoxSize / 2))
+
+        Row {
+            Spacer(modifier = Modifier.width(xOffset))
+
+            Row (
+                modifier = Modifier
+                    .height(slotHeight + dragHandleCollisionBoxSize)
+            ) {
+                val startTimeDraggableState = rememberDraggableState {
+                    val drag = with (density) { it.toDp() }
+                    val offsetMillis = drag.toMillis(hourHeight)
+
+                    if (slot.startTimeMillis + offsetMillis in bounds.start..slot.endTimeMillis) {
+                        viewModel.updateTimeTable(
+                            slot.copy(
+                                startTimeMillis = slot.startTimeMillis + offsetMillis
+                            )
+                        )
+                    } else {
+                        animationScope.launch {
+                            scrollState.scrollBy(-it)
+                        }
+                    }
+                }
+
+                DragHandle(
+                    modifier = Modifier
+                        .draggable(
+                            state = startTimeDraggableState,
+                            orientation = Orientation.Vertical
+                        ),
+                    collisionBoxSize = dragHandleCollisionBoxSize,
+                    dragHandleSize = dragHandleSize
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                val endTimeDraggableState = rememberDraggableState {
+                    val drag = with (density) { it.toDp() }
+                    val offsetMillis = drag.toMillis(hourHeight)
+
+                    if (slot.endTimeMillis + offsetMillis in slot.startTimeMillis..bounds.last) {
+                        viewModel.updateTimeTable(
+                            slot.copy(
+                                endTimeMillis = slot.endTimeMillis + offsetMillis
+                            )
+                        )
+                    } else {
+                        animationScope.launch {
+                            scrollState.scrollBy(-it)
+                        }
+                    }
+                }
+
+                Column {
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    DragHandle(
+                        modifier = Modifier
+                            .draggable(
+                                state = endTimeDraggableState,
+                                orientation = Orientation.Vertical
+                            ),
+                        collisionBoxSize = dragHandleCollisionBoxSize,
+                        dragHandleSize = dragHandleSize
+                    )
+                }
+            }
         }
     }
 }
@@ -293,36 +425,15 @@ fun TimeTableSlot(
     hourHeight: Dp,
     xOffset: Dp,
     scrollState: ScrollState,
+    dragHandleSize: Dp,
     viewModel: AttendanceViewModel
 ) {
-    val timeTableMutatedTrigger by viewModel.timeTableListUpdatedTrigger.collectAsState()
-    var bounds by remember { mutableStateOf(0L..MILLIS_IN_DAY) }
-
-    LaunchedEffect(timeTableMutatedTrigger) {
-        // recalculating the bounds
-        val slotList = viewModel.timeTableList[slot.day]
-        var minStart = 0L
-        var maxEnd = MILLIS_IN_DAY
-
-        for (s in slotList) {
-            if (s.id == slot.id) continue
-
-            if (s.endTimeMillis <= slot.startTimeMillis) {
-                minStart = maxOf(minStart, s.endTimeMillis)
-            } else if (s.startTimeMillis >= slot.endTimeMillis) {
-                maxEnd = minOf(maxEnd, s.startTimeMillis)
-            }
-        }
-
-        bounds = minStart..maxEnd
-    }
+    val slotBounds by viewModel.slotBounds.collectAsState()
+    val bounds = slotBounds[slot.id] ?: 0L..MILLIS_IN_DAY
 
     val yOffset = slot.startTimeMillis.millisToDp(hourHeight) + hourHeight / 2f
     val slotHeight = (slot.endTimeMillis - slot.startTimeMillis).millisToDp(hourHeight)
     val borderWidth = 2.dp
-
-    val dragHandleCollisionBoxSize = 50.dp
-    val dragHandleSize = 20.dp
 
     val density = LocalDensity.current
 
@@ -342,194 +453,119 @@ fun TimeTableSlot(
     }
 
     Column {
-        Spacer(modifier = Modifier.height(yOffset - dragHandleCollisionBoxSize / 2))
+        Spacer(modifier = Modifier.height(yOffset - borderWidth / 2))
 
         Row {
             Spacer(modifier = Modifier.width(xOffset - borderWidth / 2))
 
-            Box (
-                modifier = Modifier
-                    .weight(1f)
-                    .height(slotHeight + dragHandleCollisionBoxSize),
-                contentAlignment = Alignment.Center
-            ) {
-                val draggableState = rememberDraggableState { dragPx ->
-                    val drag = with (density) { dragPx.toDp() }
-                    val offsetMillis = drag.toMillis(hourHeight)
+            val draggableState = rememberDraggableState { dragPx ->
+                val drag = with (density) { dragPx.toDp() }
+                val offsetMillis = drag.toMillis(hourHeight)
 
-                    if (
-                        slot.startTimeMillis + offsetMillis in bounds &&
-                        slot.endTimeMillis + offsetMillis in bounds
-                    ) {
-                        viewModel.updateTimeTable(slot.copy(
-                            startTimeMillis = slot.startTimeMillis + offsetMillis,
-                            endTimeMillis = slot.endTimeMillis + offsetMillis
-                        ))
-                    } else {
-                        animationScope.launch {
-                            scrollState.scrollBy(-dragPx)
-                        }
-                    }
-                }
-
-                // the box that represents the slot
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(slotHeight + borderWidth)
-                        .border(
-                            width = borderWidth,
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = MaterialTheme.shapes.medium
-                        )
-                        .combinedClickable(
-                            onClick = { showDeleteDialog = true },
-                            onLongClick = { showDeleteDialog = true },
-                            onDoubleClick = {
-                                // making the slot occupy the maximum area it can when double clicked
-                                viewModel.updateTimeTable(
-                                    slot.copy(
-                                        startTimeMillis = bounds.start,
-                                        endTimeMillis = bounds.last
-                                    )
-                                )
-                            }
-                        )
-                        .draggable(
-                            state = draggableState,
-                            orientation = Orientation.Vertical
-                        )
-                        .background(
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                            shape = MaterialTheme.shapes.medium
-                        ),
-                    verticalAlignment = Alignment.CenterVertically
+                if (
+                    slot.startTimeMillis + offsetMillis in bounds &&
+                    slot.endTimeMillis + offsetMillis in bounds
                 ) {
-                    Column (
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .padding(top = dragHandleSize / 2, start = borderWidth + 5.dp),
-                        verticalArrangement = Arrangement.Top
-                    ) {
-                        Text(
-                            text = slot.startTimeMillis.toHours(),
-                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
-
-                    Box {
-                        var showSubjectSelectorDropDown by remember { mutableStateOf(false) }
-                        val slotSubjectName = remember (slot.subjectId) {
-                            if (slot.subjectId != null) {
-                                viewModel.getSubject(slot.subjectId)?.name ?: "select a subject"
-                            } else {
-                                "select a subject"
-                            }
-                        }
-
-                        Text(
-                            text = slotSubjectName,
-                            modifier = Modifier
-                                .clickable {
-                                    showSubjectSelectorDropDown = true
-                                }
-                        )
-
-                        SubjectSelectorDropDown(
-                            slot = slot,
-                            viewModel = viewModel,
-                            expanded = showSubjectSelectorDropDown,
-                            hideDropdownMenu = {
-                                showSubjectSelectorDropDown = false
-                            }
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    LocationSelectorDropDown()
-
-                    Column (
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .padding(bottom = dragHandleSize / 2, end = borderWidth + 5.dp),
-                        verticalArrangement = Arrangement.Bottom,
-                    ) {
-                        Text(
-                            text = slot.endTimeMillis.toHours(),
-                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
-                            fontFamily = FontFamily.Monospace
-                        )
+                    viewModel.updateTimeTable(slot.copy(
+                        startTimeMillis = slot.startTimeMillis + offsetMillis,
+                        endTimeMillis = slot.endTimeMillis + offsetMillis
+                    ))
+                } else {
+                    animationScope.launch {
+                        scrollState.scrollBy(-dragPx)
                     }
                 }
+            }
 
-                // top and bottom drag handles
-
-                Row {
-                    val startTimeDraggableState = rememberDraggableState {
-                        val drag = with (density) { it.toDp() }
-                        val offsetMillis = drag.toMillis(hourHeight)
-
-                        if (slot.startTimeMillis + offsetMillis in bounds.start..slot.endTimeMillis) {
+            // the box that represents the slot
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(slotHeight + borderWidth)
+                    .border(
+                        width = borderWidth,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = MaterialTheme.shapes.medium
+                    )
+                    .combinedClickable(
+                        onClick = { showDeleteDialog = true },
+                        onLongClick = { showDeleteDialog = true },
+                        onDoubleClick = {
+                            // making the slot occupy the maximum area it can when double clicked
                             viewModel.updateTimeTable(
                                 slot.copy(
-                                    startTimeMillis = slot.startTimeMillis + offsetMillis
+                                    startTimeMillis = bounds.start,
+                                    endTimeMillis = bounds.last
                                 )
                             )
+                        }
+                    )
+                    .draggable(
+                        state = draggableState,
+                        orientation = Orientation.Vertical
+                    )
+                    .background(
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                        shape = MaterialTheme.shapes.medium
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column (
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(top = dragHandleSize / 2, start = borderWidth + 5.dp),
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    Text(
+                        text = slot.startTimeMillis.toHours(),
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+
+                Box {
+                    var showSubjectSelectorDropDown by remember { mutableStateOf(false) }
+                    val slotSubjectName = remember (slot.subjectId) {
+                        if (slot.subjectId != null) {
+                            viewModel.getSubject(slot.subjectId)?.name ?: "select a subject"
                         } else {
-                            animationScope.launch {
-                                scrollState.scrollBy(-it)
-                            }
+                            "select a subject"
                         }
                     }
 
-                    Column {
-                        DragHandle(
-                            modifier = Modifier
-                                .draggable(
-                                    state = startTimeDraggableState,
-                                    orientation = Orientation.Vertical
-                                ),
-                            collisionBoxSize = dragHandleCollisionBoxSize,
-                            dragHandleSize = dragHandleSize
-                        )
-
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    val endTimeDraggableState = rememberDraggableState {
-                        val drag = with (density) { it.toDp() }
-                        val offsetMillis = drag.toMillis(hourHeight)
-
-                        if (slot.endTimeMillis + offsetMillis in slot.startTimeMillis..bounds.last) {
-                            viewModel.updateTimeTable(
-                                slot.copy(
-                                    endTimeMillis = slot.endTimeMillis + offsetMillis
-                                )
-                            )
-                        } else {
-                            animationScope.launch {
-                                scrollState.scrollBy(-it)
+                    Text(
+                        text = slotSubjectName,
+                        modifier = Modifier
+                            .clickable {
+                                showSubjectSelectorDropDown = true
                             }
+                    )
+
+                    SubjectSelectorDropDown(
+                        slot = slot,
+                        viewModel = viewModel,
+                        expanded = showSubjectSelectorDropDown,
+                        hideDropdownMenu = {
+                            showSubjectSelectorDropDown = false
                         }
-                    }
+                    )
+                }
 
-                    Column {
-                        Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.weight(1f))
 
-                        DragHandle(
-                            modifier = Modifier
-                                .draggable(
-                                    state = endTimeDraggableState,
-                                    orientation = Orientation.Vertical
-                                ),
-                            collisionBoxSize = dragHandleCollisionBoxSize,
-                            dragHandleSize = dragHandleSize
-                        )
-                    }
+                LocationSelectorDropDown()
+
+                Column (
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(bottom = dragHandleSize / 2, end = borderWidth + 5.dp),
+                    verticalArrangement = Arrangement.Bottom,
+                ) {
+                    Text(
+                        text = slot.endTimeMillis.toHours(),
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        fontFamily = FontFamily.Monospace
+                    )
                 }
             }
         }

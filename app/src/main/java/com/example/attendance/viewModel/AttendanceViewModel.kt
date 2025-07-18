@@ -40,6 +40,9 @@ class AttendanceViewModel(
     var timeTableListUpdatedTrigger = MutableStateFlow(false)
     private set
 
+    private var _slotBounds = MutableStateFlow(mutableMapOf<Long, LongRange>())
+    val slotBounds = _slotBounds
+
     init {
         loadSubjectList()
         loadTimeTableList()
@@ -419,5 +422,9 @@ class AttendanceViewModel(
 
     fun timeTableListMutated() {
         timeTableListUpdatedTrigger.value = !timeTableListUpdatedTrigger.value
+    }
+
+    fun setSlotBound(slotId: Long, bound: LongRange) {
+        slotBounds.value[slotId] = bound
     }
 }
