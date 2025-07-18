@@ -5,6 +5,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -58,6 +59,8 @@ import com.example.attendance.homeScreen.attendanceScreen.AddSubjectDialog
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
+import kotlin.math.max
+import kotlin.math.min
 
 const val MILLIS_IN_HOUR = 3600000L
 const val MILLIS_IN_DAY = 86400000L
@@ -104,9 +107,6 @@ fun TimeLineGrid(
 ) {
     val hourHeight by viewModel.timeLineHourHeight.collectAsState()
 
-    val lineColor = MaterialTheme.colorScheme.outlineVariant
-
-    val lineWidth = 1.5.dp
     val animationScope = rememberCoroutineScope()
 
     val tapTimeOutMs = 100L
@@ -133,22 +133,38 @@ fun TimeLineGrid(
                                 val pointer = pointers[0].position
 
                                 // when a tap is detected a one hour slot is added to the timetable
-                                val startTime = ((pointer.y - hourHeight.toPx() / 2) / hourHeight.toPx()).toLong() * MILLIS_IN_HOUR
+                                val pointerMillis = ((pointer.y - hourHeight.toPx() / 2).toDouble() / hourHeight.toPx().toDouble() * MILLIS_IN_HOUR).toLong()
+                                val startTime = pointerMillis - (pointerMillis % MILLIS_IN_HOUR)
+                                val endTime = startTime + MILLIS_IN_HOUR
 
+                                var bounds = startTime..endTime
 
-                                if (startTime in 0L until MILLIS_IN_DAY) {
-                                    val slot = TimeTable(
-                                        subjectId = null,
-                                        day = day.ordinal,
-                                        startTimeMillis = startTime,
-                                        endTimeMillis = startTime + MILLIS_IN_HOUR,
-                                    )
+                                // if there is no place the slot then range will throw an exception
+                                try {
+                                    for (s in viewModel.timeTableList[day.ordinal]) {
+                                        bounds = if (s.endTimeMillis <= pointerMillis) {
+                                            max(bounds.start, s.endTimeMillis)..bounds.last
+                                        } else if (s.startTimeMillis >= pointerMillis ) {
+                                            bounds.start..min(bounds.last, s.startTimeMillis)
+                                        } else {
+                                            throw Exception("Slot overlaps with another slot")
+                                        }
+                                    }
 
-                                    viewModel.addTimeTable(slot)
+                                    if (startTime in 0L until MILLIS_IN_DAY) {
+                                        val slot = TimeTable(
+                                            subjectId = null,
+                                            day = day.ordinal,
+                                            startTimeMillis = startTime.coerceIn(bounds),
+                                            endTimeMillis = endTime.coerceIn(bounds),
+                                        )
+
+                                        viewModel.addTimeTable(slot)
+                                    }
+                                } finally {
+                                    // consuming the tap gesture
+                                    event.changes.forEach { it.consume() }
                                 }
-
-                                // consuming the tap gesture
-                                event.changes.forEach { it.consume() }
                             }
                         }
                         // identifying zoom gesture
@@ -198,48 +214,75 @@ fun TimeLineGrid(
     ) {
         val canvasHeight = hourHeight * 25
 
-        // canvas is used to draw the grid
-        Canvas(
-            modifier = Modifier
-                .height(canvasHeight)
-                .fillMaxWidth()
-        ) {
-            drawLine(
-                color = lineColor,
-                start = Offset(xOffset.toPx(), 0f),
-                end = Offset(xOffset.toPx(), canvasHeight.toPx()),
-                strokeWidth = lineWidth.toPx()
-            )
+        HourGridLines(canvasHeight, hourHeight, xOffset)
 
-            for (i in 0..24) {
-                val yOffset = (hourHeight * (i + 0.5f)).toPx()
-                drawLine(
-                    color = lineColor,
-                    start = Offset((xOffset * 0.9f).toPx(), yOffset),
-                    end = Offset(size.width, yOffset),
-                    strokeWidth = lineWidth.toPx()
-                )
-            }
-        }
+        HoursLabelColumn(canvasHeight, hourHeight, xOffset)
 
-        // used to write the time at left hand side
-        Column (
-            modifier = Modifier
-                .size(width = xOffset, height = canvasHeight)
-        ) {
-            GridHourText("12 am", xOffset, hourHeight)
-
-            listOf("am", "pm").forEach { it ->
-                (1..12).forEach { hour ->
-                    GridHourText("$hour $it", xOffset, hourHeight)
-                }
-            }
-        }
-
-        // showing oll the time-table slots on top of the grid as boxes
+        // showing all the time-table slots in front of the grid
         val timeTableList = viewModel.timeTableList[day.ordinal]
         for (slot in timeTableList) {
             TimeTableSlot(slot, hourHeight, xOffset, scrollState, viewModel)
+        }
+    }
+}
+
+@Composable
+fun HoursLabelColumn(
+    canvasHeight: Dp,
+    hourHeight: Dp,
+    xOffset: Dp
+) {
+    Column (
+        modifier = Modifier
+            .size(width = xOffset, height = canvasHeight)
+    ) {
+        GridHourText("12 am", xOffset, hourHeight)
+
+        listOf("am", "pm").forEach { it ->
+            (1..12).forEach { hour ->
+                GridHourText("$hour $it", xOffset, hourHeight)
+            }
+        }
+    }
+}
+
+/**
+ * This composable function draws the grid lines for the timetable.
+ * It draws a vertical line at the given xOffset and horizontal lines for each hour.
+ *
+ * @param canvasHeight The total height of the canvas.
+ * @param hourHeight The height of each hour slot in the grid.
+ * @param xOffset The horizontal offset from the left edge of the canvas where the vertical line is drawn.
+ */
+@Composable
+fun HourGridLines (
+    canvasHeight: Dp,
+    hourHeight: Dp,
+    xOffset: Dp
+) {
+    val lineColor = MaterialTheme.colorScheme.outlineVariant
+    val lineWidth = 1.5.dp
+
+    Canvas(
+        modifier = Modifier
+            .height(canvasHeight)
+            .fillMaxWidth()
+    ) {
+        drawLine(
+            color = lineColor,
+            start = Offset(xOffset.toPx(), 0f),
+            end = Offset(xOffset.toPx(), canvasHeight.toPx()),
+            strokeWidth = lineWidth.toPx()
+        )
+
+        for (i in 0..24) {
+            val yOffset = (hourHeight * (i + 0.5f)).toPx()
+            drawLine(
+                color = lineColor,
+                start = Offset((xOffset * 0.9f).toPx(), yOffset),
+                end = Offset(size.width, yOffset),
+                strokeWidth = lineWidth.toPx()
+            )
         }
     }
 }
@@ -339,12 +382,26 @@ fun TimeTableSlot(
                             color = MaterialTheme.colorScheme.primary,
                             shape = MaterialTheme.shapes.medium
                         )
-                        .clickable(
-                            onClick = { showDeleteDialog = true }
+                        .combinedClickable(
+                            onClick = { showDeleteDialog = true },
+                            onLongClick = { showDeleteDialog = true },
+                            onDoubleClick = {
+                                // making the slot occupy the maximum area it can when double clicked
+                                viewModel.updateTimeTable(
+                                    slot.copy(
+                                        startTimeMillis = bounds.start,
+                                        endTimeMillis = bounds.last
+                                    )
+                                )
+                            }
                         )
                         .draggable(
                             state = draggableState,
                             orientation = Orientation.Vertical
+                        )
+                        .background(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                            shape = MaterialTheme.shapes.medium
                         ),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
