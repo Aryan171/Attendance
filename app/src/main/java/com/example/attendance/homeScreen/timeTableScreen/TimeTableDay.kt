@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.gestures.scrollBy
@@ -36,6 +37,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -57,7 +61,6 @@ import com.example.attendance.database.subject.SubjectUiModel
 import com.example.attendance.database.timeTable.TimeTable
 import com.example.attendance.homeScreen.attendanceScreen.AddSubjectDialog
 import com.example.attendance.viewModel.AttendanceViewModel
-import kotlinx.coroutines.flow.compose
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import kotlin.math.max
@@ -88,7 +91,7 @@ fun TimeTableDay(
                 }
             }
     ) {
-        TimeLineGrid(
+        TimeTableGrid(
             parentWidth * xOffsetRatio,
             scrollState,
             parentWidth / 10 .. parentWidth / 2,
@@ -99,7 +102,7 @@ fun TimeTableDay(
 }
 
 @Composable
-fun TimeLineGrid(
+fun TimeTableGrid(
     xOffset: Dp,
     scrollState: ScrollState,
     hourHeightRange: ClosedRange<Dp>,
@@ -112,18 +115,28 @@ fun TimeLineGrid(
 
     val tapTimeOutMs = 100L
 
+    var pointerDownTime by remember { mutableLongStateOf(0L) }
+    var pointerDownPosition by remember { mutableStateOf(Offset.Unspecified) }
+
+    var firstA by remember { mutableStateOf(Offset.Unspecified) }
+    var firstB by remember { mutableStateOf(Offset.Unspecified) }
+    var firstCentroid by remember { mutableFloatStateOf(0F) }
+
+    var originalScrollValue by remember { mutableIntStateOf(0) }
+    var originalHourHeight = 0.dp
+
     Box (
         modifier = Modifier
             .pointerInput(Unit) {
                 awaitPointerEventScope {
-                    var pointerDownTime: Long = 0
-                    var pointerDownPosition = Offset(0f, 0f)
                     while(true) {
                         val event = awaitPointerEvent()
                         val pointers = event.changes
 
                         // identifying tap gesture
                         if (pointers.size == 1) {
+                            originalHourHeight = 0.dp
+
                             if (pointers[0].changedToDown()) {
                                 pointerDownTime = System.currentTimeMillis()
                                 pointerDownPosition = pointers[0].position
@@ -131,16 +144,21 @@ fun TimeLineGrid(
                                 System.currentTimeMillis() - pointerDownTime < tapTimeOutMs &&
                                 (pointers[0].position - pointerDownPosition).getDistance() == 0f
                                 ) {
+
+                                // consuming the tap gesture
+                                event.changes.forEach { it.consume() }
+
                                 val pointer = pointers[0].position
 
                                 // when a tap is detected a one hour slot is added to the timetable
-                                val pointerMillis = ((pointer.y - hourHeight.toPx() / 2).toDouble() / hourHeight.toPx().toDouble() * MILLIS_IN_HOUR).toLong()
+                                val pointerMillis = ((pointer.y - hourHeight.toPx() / 2).toDouble()
+                                        / hourHeight.toPx().toDouble() * MILLIS_IN_HOUR).toLong()
                                 val startTime = pointerMillis - (pointerMillis % MILLIS_IN_HOUR)
                                 val endTime = startTime + MILLIS_IN_HOUR
 
                                 var bounds = startTime..endTime
 
-                                // if there is no place the slot then range will throw an exception
+                                // if there is no place for the slot then range will throw an exception
                                 try {
                                     for (s in viewModel.timeTableList[day.ordinal]) {
                                         bounds = if (s.endTimeMillis <= pointerMillis) {
@@ -162,42 +180,32 @@ fun TimeLineGrid(
 
                                         viewModel.addTimeTable(slot)
                                     }
-                                } finally {
-                                    // consuming the tap gesture
-                                    event.changes.forEach { it.consume() }
-                                }
+                                } catch (_: Exception) {}
                             }
                         }
                         // identifying zoom gesture
                         else if (pointers.size == 2) {
                             pointerDownTime = 0
 
-                            val a = pointers[0].position
-                            val b = pointers[1].position
-                            val prevA = pointers[0].previousPosition
-                            val prevB = pointers[1].previousPosition
-
-                            if (a == Offset.Unspecified ||
-                                b == Offset.Unspecified ||
-                                prevA == Offset.Unspecified ||
-                                prevB == Offset.Unspecified
-                                ) {
-                                continue
+                            if (originalHourHeight == 0.dp) {
+                                firstA = pointers[0].position
+                                firstB = pointers[1].position
+                                originalHourHeight = hourHeight
+                                originalScrollValue = scrollState.value
+                                firstCentroid = event.calculateCentroid().y
                             }
 
-                            val zoom = (a.y - b.y) / (prevA.y - prevB.y)
-                            val newHourHeight = (zoom * hourHeight).coerceIn(hourHeightRange)
-                            val effectiveZoom = newHourHeight / hourHeight
-                            val centroid = (a.y + b.y) / 2f
-                            val previousCentroid = (prevA.y + prevB.y) / 2f
+                            val a = pointers[0].position
+                            val b = pointers[1].position
 
-                            if (zoom != 1f) {
-                                println(scrollState.value / (hourHeight.toPx() * 25))
+                            val zoom = (a - b).y / (firstA - firstB).y
+                            val newHourHeight = (zoom * originalHourHeight).coerceIn(hourHeightRange)
+                            val effectiveZoom = newHourHeight / originalHourHeight
+
+                            if (effectiveZoom != 1f) {
                                 animationScope.launch {
-                                    scrollState.scrollTo (
-                                        scrollState.value + (
-                                                previousCentroid * (effectiveZoom - 1) + (previousCentroid - centroid) / effectiveZoom
-                                                ).toInt()
+                                    scrollState.scrollTo(
+                                        originalScrollValue + (firstCentroid * (effectiveZoom - 1F)).toInt()
                                     )
                                 }
 
@@ -219,9 +227,6 @@ fun TimeLineGrid(
 
         HoursLabelColumn(canvasHeight, hourHeight, xOffset)
 
-        // showing all the time-table slots in front of the grid
-        val dayTimeTable = viewModel.timeTableList[day.ordinal]
-
         val dragHandleSize = 20.dp
         val dragHandleCollisionBoxSize = 50.dp
 
@@ -229,24 +234,28 @@ fun TimeLineGrid(
 
         // recalculating the bounds when timeTableList is mutated
         LaunchedEffect(timeTableMutatedTrigger) {
-            for (slot in dayTimeTable) {
-                val slotList = viewModel.timeTableList[slot.day]
+            val slotList = viewModel.timeTableList[day.ordinal]
+
+            for (slot1 in slotList) {
                 var minStart = 0L
                 var maxEnd = MILLIS_IN_DAY
 
-                for (s in slotList) {
-                    if (s.id == slot.id) continue
+                for (slot2 in slotList) {
+                    if (slot2.id == slot1.id) continue
 
-                    if (s.endTimeMillis <= slot.startTimeMillis) {
-                        minStart = maxOf(minStart, s.endTimeMillis)
-                    } else if (s.startTimeMillis >= slot.endTimeMillis) {
-                        maxEnd = minOf(maxEnd, s.startTimeMillis)
+                    if (slot2.endTimeMillis <= slot1.startTimeMillis) {
+                        minStart = maxOf(minStart, slot2.endTimeMillis)
+                    } else if (slot2.startTimeMillis >= slot1.endTimeMillis) {
+                        maxEnd = minOf(maxEnd, slot2.startTimeMillis)
                     }
                 }
 
-                viewModel.setSlotBound(slot.id, minStart..maxEnd)
+                viewModel.setSlotBound(slot1.id, minStart..maxEnd)
             }
         }
+
+        // showing all the time-table slots in front of the grid
+        val dayTimeTable = viewModel.timeTableList[day.ordinal]
 
         for (slot in dayTimeTable) {
             TimeTableSlot(slot, hourHeight, xOffset, scrollState, dragHandleSize, viewModel)
@@ -280,9 +289,8 @@ fun SlotDragHandles(
     val animationScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val slotHeight = (slot.endTimeMillis - slot.startTimeMillis).millisToDp(hourHeight)
-    val slotBounds by viewModel.slotBounds.collectAsState()
 
-    val bounds = slotBounds[slot.id] ?: 0L..MILLIS_IN_DAY
+    val bounds = viewModel.slotBounds[slot.id] ?: 0L..MILLIS_IN_DAY
 
     Column {
         Spacer(modifier = Modifier.height(yOffset - dragHandleCollisionBoxSize / 2))
@@ -298,7 +306,7 @@ fun SlotDragHandles(
                     val drag = with (density) { it.toDp() }
                     val offsetMillis = drag.toMillis(hourHeight)
 
-                    if (slot.startTimeMillis + offsetMillis in bounds.start..slot.endTimeMillis) {
+                    if (slot.startTimeMillis + offsetMillis in bounds.start until  slot.endTimeMillis) {
                         viewModel.updateTimeTable(
                             slot.copy(
                                 startTimeMillis = slot.startTimeMillis + offsetMillis
@@ -327,7 +335,7 @@ fun SlotDragHandles(
                     val drag = with (density) { it.toDp() }
                     val offsetMillis = drag.toMillis(hourHeight)
 
-                    if (slot.endTimeMillis + offsetMillis in slot.startTimeMillis..bounds.last) {
+                    if (slot.endTimeMillis + offsetMillis in (slot.startTimeMillis + 1L) .. bounds.last) {
                         viewModel.updateTimeTable(
                             slot.copy(
                                 endTimeMillis = slot.endTimeMillis + offsetMillis
@@ -428,8 +436,7 @@ fun TimeTableSlot(
     dragHandleSize: Dp,
     viewModel: AttendanceViewModel
 ) {
-    val slotBounds by viewModel.slotBounds.collectAsState()
-    val bounds = slotBounds[slot.id] ?: 0L..MILLIS_IN_DAY
+    val bounds = viewModel.slotBounds[slot.id] ?: 0L..MILLIS_IN_DAY
 
     val yOffset = slot.startTimeMillis.millisToDp(hourHeight) + hourHeight / 2f
     val slotHeight = (slot.endTimeMillis - slot.startTimeMillis).millisToDp(hourHeight)
@@ -610,7 +617,9 @@ fun SubjectSelectorDropDown (
             }
         )
 
-        HorizontalDivider()
+        if (subjects.isNotEmpty()) {
+            HorizontalDivider()
+        }
 
         for (subject in subjects) {
             if (subject.id == slot.subjectId) {
@@ -693,7 +702,7 @@ fun DragHandle(
             .size(collisionBoxSize)
             .padding((collisionBoxSize - dragHandleSize) / 2)
             .background(
-                color = MaterialTheme.colorScheme.inversePrimary,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
                 shape = CircleShape
             )
             .padding(dragHandleSize / 5)

@@ -1,6 +1,7 @@
 package com.example.attendance.viewModel
 
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.unit.Dp
@@ -37,11 +38,10 @@ class AttendanceViewModel(
     val subjectList = mutableStateListOf<SubjectUiModel>()
     val timeTableList = mutableStateListOf<SnapshotStateList<TimeTable>>()
 
-    var timeTableListUpdatedTrigger = MutableStateFlow(false)
+    var timeTableListUpdatedTrigger = MutableStateFlow(ULong.MIN_VALUE)
     private set
 
-    private var _slotBounds = MutableStateFlow(mutableMapOf<Long, LongRange>())
-    val slotBounds = _slotBounds
+    val slotBounds = mutableStateMapOf<Long, LongRange>()
 
     init {
         loadSubjectList()
@@ -364,15 +364,11 @@ class AttendanceViewModel(
             throw IndexOutOfBoundsException("Day must be between 0 and 6")
         }
 
-        viewModelScope.launch {
-            val generatedId = withContext(Dispatchers.IO) {
-                databaseRepository.insertTimeTable(timeTable)
-            }
-
+        viewModelScope.launch(Dispatchers.IO) {
+            val generatedId = databaseRepository.insertTimeTable(timeTable)
             timeTableList[timeTable.day].add(timeTable.copy(id = generatedId))
+            timeTableListMutated()
         }
-
-        timeTableListMutated()
     }
 
     fun deleteTimeTable(timeTable: TimeTable) {
@@ -407,7 +403,7 @@ class AttendanceViewModel(
             throw IndexOutOfBoundsException("day should be in bound 0..6")
         }
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             databaseRepository.updateTimeTable(timeTable)
         }
 
@@ -421,10 +417,10 @@ class AttendanceViewModel(
     fun getSubject(subjectId: Long): SubjectUiModel? = subjectList.find { it.id == subjectId }
 
     fun timeTableListMutated() {
-        timeTableListUpdatedTrigger.value = !timeTableListUpdatedTrigger.value
+        timeTableListUpdatedTrigger.value++
     }
 
     fun setSlotBound(slotId: Long, bound: LongRange) {
-        slotBounds.value[slotId] = bound
+        slotBounds[slotId] = bound
     }
 }
