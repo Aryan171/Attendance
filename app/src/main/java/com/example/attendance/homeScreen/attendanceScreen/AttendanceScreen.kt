@@ -15,11 +15,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.attendance.database.subject.SubjectUiModel
+import com.example.attendance.homeScreen.Screen
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.serialization.Serializable
 
 @Serializable
-object AttendanceScreen
+object AttendanceScreen : Screen
 
 @Composable
 fun AttendanceScreen(

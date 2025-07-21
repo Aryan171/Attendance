@@ -3,63 +3,83 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.attendance.database.subject.SubjectUiModel
+import androidx.navigation.toRoute
 import com.example.attendance.homeScreen.attendanceScreen.AttendanceScreen
-import com.example.attendance.homeScreen.locationsScreen.LocationsScreen
 import com.example.attendance.homeScreen.timeTableScreen.TimeTableScreen
+import com.example.attendance.subjectDetailScreen.SubjectDetailScreen
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.serialization.Serializable
 
 @Serializable
-object HomeScreen
+object HomeScreen : Screen
 
 @Composable
 fun HomeScreen(
-    viewModel: AttendanceViewModel,
-    subjectCardOnClick: (SubjectUiModel) -> Unit
+    viewModel: AttendanceViewModel
 ) {
     val navController = rememberNavController()
 
-    Scaffold(
-        bottomBar = { HomeScreenBottomBar(navController) }
-    ) { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = AttendanceScreen,
-            enterTransition = {
-                fadeIn(animationSpec = tween(600))
-            },
-            exitTransition = {
-                fadeOut(animationSpec = tween(600))
-            }
-        ) {
-            composable<AttendanceScreen> {
+    NavHost(
+        navController = navController,
+        startDestination = AttendanceScreen,
+        enterTransition = {
+            fadeIn(animationSpec = tween(600))
+        },
+        exitTransition = {
+            fadeOut(animationSpec = tween(600))
+        }
+    ) {
+        composable<AttendanceScreen> {
+            HomeScreenScaffold(navController) { paddingValues ->
                 AttendanceScreen(
                     paddingValues = PaddingValues(bottom = paddingValues.calculateBottomPadding()),
-                    viewModel = viewModel,
-                    subjectCardOnClick = subjectCardOnClick
-                )
+                    viewModel = viewModel
+                ) {
+                    subject ->
+                    navController.navigate(SubjectDetailScreen(subject.id))
+                }
             }
+        }
 
-            composable<TimeTableScreen> {
+        composable<TimeTableScreen> {
+            HomeScreenScaffold(navController) { paddingValues ->
                 TimeTableScreen(
                     paddingValues = PaddingValues(bottom = paddingValues.calculateBottomPadding()),
                     viewModel = viewModel
                 )
             }
+        }
 
-            composable<LocationsScreen> {
-                LocationsScreen(
-                    paddingValues = PaddingValues(bottom = paddingValues.calculateBottomPadding())
-                )
+        composable<SubjectDetailScreen> { navBackStackEntry ->
+            val subjectDetailScreen: SubjectDetailScreen = navBackStackEntry.toRoute()
+            val subject = viewModel.getSubject(subjectDetailScreen.subjectId)
+
+            if (subject != null) {
+                SubjectDetailScreen(
+                    subject = subject,
+                    viewModel = viewModel
+                ) {
+                    navController.popBackStack()
+                }
             }
         }
+    }
+}
+
+@Composable
+fun HomeScreenScaffold(
+    navController: NavHostController,
+    content: @Composable (PaddingValues) -> Unit
+) {
+    Scaffold (
+        bottomBar = { HomeScreenBottomBar(navController) }
+    ) { paddingValues ->
+        content(paddingValues)
     }
 }

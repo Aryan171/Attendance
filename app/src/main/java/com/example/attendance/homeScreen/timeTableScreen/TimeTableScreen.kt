@@ -39,13 +39,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
+import com.example.attendance.homeScreen.Screen
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.time.DayOfWeek
 
 @Serializable
-object TimeTableScreen
+object TimeTableScreen : Screen
 
 @Composable
 fun TimeTableScreen(

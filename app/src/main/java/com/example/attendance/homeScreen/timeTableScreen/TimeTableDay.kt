@@ -560,8 +560,6 @@ fun TimeTableSlot(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                LocationSelectorDropDown()
-
                 Column (
                     modifier = Modifier
                         .fillMaxHeight()
@@ -635,11 +633,6 @@ fun SubjectSelectorDropDown (
             )
         }
     }
-}
-
-@Composable
-fun LocationSelectorDropDown() {
-
 }
 
 @Composable

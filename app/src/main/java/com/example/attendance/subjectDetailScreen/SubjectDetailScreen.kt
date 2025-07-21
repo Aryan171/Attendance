@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import com.example.attendance.database.subject.SubjectUiModel
+import com.example.attendance.homeScreen.Screen
 import com.example.attendance.ui.theme.absent
 import com.example.attendance.ui.theme.present
 import com.example.attendance.viewModel.AttendanceViewModel
@@ -37,9 +38,9 @@ import kotlinx.serialization.Serializable
 import java.time.LocalDate
 
 @Serializable
-data class SubjectDetailScreen(
-    val subjectIndex: Int
-)
+data class SubjectDetailScreen (
+    val subjectId: Long
+) : Screen
 
 @Composable
 fun SubjectDetailScreen(
@@ -84,7 +85,8 @@ fun SubjectDetailScreen(
                             }
                             selectedDate = it
                         },
-                    onBackPress = onBackPress)
+                    onBackPress = onBackPress
+                )
             },
         bottomBar = {
             val attendanceBuffer by viewModel.attendanceBuffer(subject).collectAsState()

@@ -6,17 +6,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
 import androidx.room.Room
 import com.example.attendance.database.AppDatabase
 import com.example.attendance.database.DatabaseRepository
 import com.example.attendance.homeScreen.HomeScreen
-import com.example.attendance.homeScreen.attendanceScreen.AttendanceScreen
 import com.example.attendance.preferences.PreferencesRepository
 import com.example.attendance.subjectDetailScreen.SubjectDetailScreen
 import com.example.attendance.ui.theme.AppTheme
@@ -38,8 +35,6 @@ class MainActivity : ComponentActivity() {
             ).fallbackToDestructiveMigration(true).build()
 
         setContent {
-            val navController = rememberNavController()
-
             val viewModel by viewModels<AttendanceViewModel>{
                 viewModelFactory {
                     initializer {
@@ -49,51 +44,18 @@ class MainActivity : ComponentActivity() {
                                 db.subjectDao(),
                                 db.timetableDao()
                             ),
-                            PreferencesRepository(this@MainActivity))
+                            PreferencesRepository(this@MainActivity)
+                        )
                     }
                 }
             }
 
-            val theme = viewModel.theme.collectAsState()
+            val theme by viewModel.theme.collectAsState()
 
             AppTheme(
-                theme = theme.value
+                theme = theme
             ) {
-                NavHost(
-                    navController = navController,
-                    startDestination = HomeScreen,
-                ) {
-                    composable<HomeScreen> {
-                        HomeScreen(
-                            viewModel = viewModel,
-                            subjectCardOnClick = { subject->
-                                navController.navigate(
-                                    SubjectDetailScreen(
-                                        subjectIndex = viewModel.subjectList.indexOfFirst {
-                                            it.id == subject.id
-                                        }
-                                    )
-                                )
-                            }
-                        )
-                    }
-
-                    composable<SubjectDetailScreen> {
-                        val subjectDetailScreen: SubjectDetailScreen = it.toRoute()
-
-                        SubjectDetailScreen(
-                            subject = viewModel.subjectList[subjectDetailScreen.subjectIndex],
-                            viewModel = viewModel,
-                            onBackPress = {
-                                navController.navigate(AttendanceScreen) {
-                                    popUpTo(AttendanceScreen) {
-                                        inclusive = true
-                                    }
-                                }
-                            }
-                        )
-                    }
-                }
+                HomeScreen(viewModel)
             }
         }
     }
