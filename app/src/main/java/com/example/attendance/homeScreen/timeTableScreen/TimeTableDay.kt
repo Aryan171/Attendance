@@ -63,6 +63,7 @@ import com.example.attendance.homeScreen.attendanceScreen.AddSubjectDialog
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
+import java.time.LocalTime
 import kotlin.math.max
 import kotlin.math.min
 
@@ -75,26 +76,37 @@ fun TimeTableDay(
     day: DayOfWeek,
     viewModel: AttendanceViewModel
 ) {
-    var parentWidth by remember { mutableStateOf(0.dp) }
+    var boxWidth by remember { mutableStateOf(0.dp) }
+    var boxHeight by remember { mutableStateOf(0.dp) }
     val xOffsetRatio = 0.15f
     val density = LocalDensity.current
     val scrollState = rememberScrollState()
+    val hourHeight by viewModel.timeLineHourHeight.collectAsState()
+
+    // scrolling so that current time is in the middle
+    LaunchedEffect(boxHeight) {
+        val millisSinceStartOfDay = LocalTime.now().toSecondOfDay() * 1000L
+        println("$millisSinceStartOfDay")
+        scrollState.scrollTo(with(density) {
+            (millisSinceStartOfDay.millisToDp(hourHeight) + (hourHeight - boxHeight) / 2).toPx().toInt()
+        })
+    }
 
     Box (
         modifier = Modifier
             .fillMaxSize()
-            .height(100.dp)
-            .verticalScroll(scrollState)
             .onGloballyPositioned {
                 with(density) {
-                    parentWidth = it.size.width.toDp()
+                    boxWidth = it.size.width.toDp()
+                    boxHeight = it.size.height.toDp()
                 }
             }
+            .verticalScroll(scrollState)
     ) {
         TimeTableGrid(
-            parentWidth * xOffsetRatio,
+            boxWidth * xOffsetRatio,
             scrollState,
-            parentWidth / 10 .. parentWidth / 2,
+            boxHeight / 20 .. boxHeight / 3,
             day,
             viewModel
         )
