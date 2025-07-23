@@ -54,7 +54,7 @@ fun TimeTableScreen(
     Scaffold (
         modifier = Modifier
             .padding(paddingValues),
-        topBar = { TimeTableTopBar() }
+        topBar = { TimeTableTopBar(viewModel) }
     ) { paddingValues ->
         Column(
             modifier = Modifier

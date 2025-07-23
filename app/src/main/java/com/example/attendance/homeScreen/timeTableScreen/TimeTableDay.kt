@@ -301,6 +301,7 @@ fun SlotDragHandles(
     val slotHeight = (slot.endTimeMillis - slot.startTimeMillis).millisToDp(hourHeight)
 
     val bounds = viewModel.slotBounds[slot.id] ?: 0L..MILLIS_IN_DAY
+    val timeTableLocked by viewModel.timeTableLocked.collectAsState()
 
     Column {
         Spacer(modifier = Modifier.height(yOffset - dragHandleCollisionBoxSize / 2))
@@ -316,7 +317,8 @@ fun SlotDragHandles(
                     val drag = with (density) { it.toDp() }
                     val offsetMillis = drag.toMillis(hourHeight)
 
-                    if (slot.startTimeMillis + offsetMillis in bounds.start until  slot.endTimeMillis) {
+                    if (!timeTableLocked &&
+                        slot.startTimeMillis + offsetMillis in bounds.start until  slot.endTimeMillis) {
                         viewModel.updateTimeTable(
                             slot.copy(
                                 startTimeMillis = slot.startTimeMillis + offsetMillis
@@ -345,7 +347,8 @@ fun SlotDragHandles(
                     val drag = with (density) { it.toDp() }
                     val offsetMillis = drag.toMillis(hourHeight)
 
-                    if (slot.endTimeMillis + offsetMillis in (slot.startTimeMillis + 1L) .. bounds.last) {
+                    if (!timeTableLocked &&
+                        slot.endTimeMillis + offsetMillis in (slot.startTimeMillis + 1L) .. bounds.last) {
                         viewModel.updateTimeTable(
                             slot.copy(
                                 endTimeMillis = slot.endTimeMillis + offsetMillis
@@ -458,6 +461,8 @@ fun TimeTableSlot(
 
     val animationScope = rememberCoroutineScope()
 
+    val timeTableLocked by viewModel.timeTableLocked.collectAsState()
+
     if (showDeleteDialog) {
         SlotDeleteDialog (
             delete = {
@@ -480,6 +485,7 @@ fun TimeTableSlot(
                 val offsetMillis = drag.toMillis(hourHeight)
 
                 if (
+                    !timeTableLocked &&
                     slot.startTimeMillis + offsetMillis in bounds &&
                     slot.endTimeMillis + offsetMillis in bounds
                 ) {
@@ -509,12 +515,14 @@ fun TimeTableSlot(
                         onLongClick = { showDeleteDialog = true },
                         onDoubleClick = {
                             // making the slot occupy the maximum area it can when double clicked
-                            viewModel.updateTimeTable(
-                                slot.copy(
-                                    startTimeMillis = bounds.start,
-                                    endTimeMillis = bounds.last
+                            if (!timeTableLocked) {
+                                viewModel.updateTimeTable(
+                                    slot.copy(
+                                        startTimeMillis = bounds.start,
+                                        endTimeMillis = bounds.last
+                                    )
                                 )
-                            )
+                            }
                         }
                     )
                     .draggable(

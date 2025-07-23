@@ -38,6 +38,9 @@ class AttendanceViewModel(
     val subjectList = mutableStateListOf<SubjectUiModel>()
     val timeTableList = mutableStateListOf<SnapshotStateList<TimeTable>>()
 
+    var _timeTableLocked = MutableStateFlow(false)
+    val timeTableLocked = _timeTableLocked
+
     var timeTableListUpdatedTrigger = MutableStateFlow(ULong.MIN_VALUE)
     private set
 
@@ -422,5 +425,13 @@ class AttendanceViewModel(
 
     fun setSlotBound(slotId: Long, bound: LongRange) {
         slotBounds[slotId] = bound
+    }
+
+    fun lockTimeTable() {
+        _timeTableLocked.value = true
+    }
+
+    fun unlockTimeTable() {
+        _timeTableLocked.value = false
     }
 }
