@@ -14,10 +14,6 @@ import com.example.attendance.homeScreen.attendanceScreen.AttendanceScreen
 import com.example.attendance.homeScreen.timeTableScreen.TimeTableScreen
 import com.example.attendance.subjectDetailScreen.SubjectDetailScreen
 import com.example.attendance.viewModel.AttendanceViewModel
-import kotlinx.serialization.Serializable
-
-@Serializable
-object HomeScreen : Screen
 
 @Composable
 fun HomeScreen(

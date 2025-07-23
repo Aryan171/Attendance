@@ -6,8 +6,8 @@ An android app made to help you keep track of your attendance
 ## Features
 
 - fast and responsive ui made using jetpack compose
-- showing the number of absents and presents required so that you never go below the minimim required attendance
-- data persistance using room persistance library for fast access of data from storage
+- showing the number of absents and presents required so that you never go below the minimum required attendance
+- data persistence using room persistance library for fast access of data from storage
 - multiple themes to choose from to keep the ui experience fresh
 - ability to sort the subjects based on multiple different parameters like attendance ratio, number of present days, number of absent days etc.
 - absent and present can be marked from the homescreen itself so that attendance can be marked efficiently and the app integrates seamlessly into your daily routine

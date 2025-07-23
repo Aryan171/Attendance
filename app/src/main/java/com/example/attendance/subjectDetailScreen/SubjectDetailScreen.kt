@@ -1,7 +1,6 @@
 package com.example.attendance.subjectDetailScreen
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -158,9 +157,7 @@ fun SubjectDetailScreen(
 
             HorizontalPager(
                 modifier = Modifier
-                    .animateContentSize(
-                        animationSpec = tween(500)
-                    ),
+                    .animateContentSize(),
                 verticalAlignment = Alignment.Top,
                 state = pagerState
             ) { page ->

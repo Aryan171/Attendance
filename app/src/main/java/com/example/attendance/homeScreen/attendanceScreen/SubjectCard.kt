@@ -15,8 +15,8 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -70,7 +70,7 @@ fun SubjectCard(
     onClick: (SubjectUiModel) -> Unit
 ) {
     var showDetailedCardView by rememberSaveable {mutableStateOf(false)}
-    val cardPaddingValues = PaddingValues(10.dp, 5.dp, 10.dp, bottom = 5.dp)
+    val shadowElevation = 5.dp
     val maxIconButtonSize = 40.dp
     val currentDate = LocalDate.now()
     val presentToday: Boolean? =
@@ -95,9 +95,9 @@ fun SubjectCard(
     Column (
         modifier = Modifier
             .animateContentSize()
-            .padding(cardPaddingValues)
+            .padding(start = shadowElevation * 2, top = shadowElevation, bottom = shadowElevation, end = shadowElevation * 2)
             .shadow(
-                elevation = 5.dp,
+                elevation = shadowElevation,
                 shape = MaterialTheme.shapes.medium
             )
             .background(color = MaterialTheme.colorScheme.surfaceVariant,
@@ -127,65 +127,62 @@ fun SubjectCard(
         ) {
             Text(subject.name)
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End
+            Spacer(Modifier.weight(1f))
+
+            // absent button
+            SubjectCardIconButton(
+                maxSize = maxIconButtonSize,
+                showButton = presentToday == null || presentToday,
+                onClick = {
+                    viewModel.markAbsent(subject, currentDate)
+                }
             ) {
-                // absent button
-                SubjectCardIconButton(
-                    maxSize = maxIconButtonSize,
-                    showButton = presentToday == null || presentToday,
-                    onClick = {
-                        viewModel.markAbsent(subject, currentDate)
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.TwoTone.Close,
-                        contentDescription = "Absent"
-                    )
-                }
-
-                // present button
-                SubjectCardIconButton(
-                    maxSize = maxIconButtonSize,
-                    showButton = presentToday == null || !presentToday,
-                    onClick = {
-                        viewModel.markPresent(subject, currentDate)
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.TwoTone.Done,
-                        contentDescription = "Present"
-                    )
-                }
-
-                // clear button
-                SubjectCardIconButton(
-                    maxSize = maxIconButtonSize,
-                    showButton = presentToday != null,
-                    onClick = {
-                        viewModel.clearAttendance(subject, currentDate)
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.TwoTone.Refresh,
-                        contentDescription = "Clear"
-                    )
-                }
-
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .padding(5.dp)
-                    ,
-                    bottomText = null,
-                    percentageFontSize = 13.sp,
-                    strokeWidth = 3.dp,
-                    progress = viewModel.attendanceRatio(subject),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    trackColor = Color.Transparent
+                Icon(
+                    imageVector = Icons.TwoTone.Close,
+                    contentDescription = "Absent"
                 )
             }
+
+            // present button
+            SubjectCardIconButton(
+                maxSize = maxIconButtonSize,
+                showButton = presentToday == null || !presentToday,
+                onClick = {
+                    viewModel.markPresent(subject, currentDate)
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.TwoTone.Done,
+                    contentDescription = "Present"
+                )
+            }
+
+            // clear button
+            SubjectCardIconButton(
+                maxSize = maxIconButtonSize,
+                showButton = presentToday != null,
+                onClick = {
+                    viewModel.clearAttendance(subject, currentDate)
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.TwoTone.Refresh,
+                    contentDescription = "Clear"
+                )
+            }
+
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .size(60.dp)
+                    .padding(5.dp)
+                ,
+                bottomText = null,
+                percentageFontSize = 13.sp,
+                strokeWidth = 3.dp,
+                progress = viewModel.attendanceRatio(subject),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                trackColor = Color.Transparent
+            )
         }
 
         AnimatedVisibility(

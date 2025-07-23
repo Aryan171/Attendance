@@ -1,21 +1,21 @@
 package com.example.attendance
 
+import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.annotation.RequiresPermission
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
 import com.example.attendance.database.AppDatabase
 import com.example.attendance.database.DatabaseRepository
 import com.example.attendance.homeScreen.HomeScreen
 import com.example.attendance.preferences.PreferencesRepository
-import com.example.attendance.subjectDetailScreen.SubjectDetailScreen
 import com.example.attendance.ui.theme.AppTheme
 import com.example.attendance.viewModel.AttendanceViewModel
 
@@ -24,6 +24,7 @@ class MainActivity : ComponentActivity() {
         lateinit var db : AppDatabase
     }
 
+    @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

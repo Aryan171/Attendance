@@ -185,6 +185,9 @@ fun TimeTableGrid(
                         }
                         // identifying zoom gesture
                         else if (pointers.size == 2) {
+                            // consuming the zoom gesture
+                            event.changes.forEach { it.consume() }
+
                             pointerDownTime = 0
 
                             if (originalHourHeight == 0.dp) {
@@ -201,19 +204,14 @@ fun TimeTableGrid(
                             val zoom = (a - b).y / (firstA - firstB).y
                             val newHourHeight = (zoom * originalHourHeight).coerceIn(hourHeightRange)
                             val effectiveZoom = newHourHeight / originalHourHeight
-
                             if (effectiveZoom != 1f) {
                                 animationScope.launch {
                                     scrollState.scrollTo(
                                         originalScrollValue + (firstCentroid * (effectiveZoom - 1F)).toInt()
                                     )
                                 }
-
                                 // modifying the hourHeight
                                 viewModel.setTimeLineHourHeight(newHourHeight)
-
-                                // consuming the zoom gesture
-                                event.changes.forEach { it.consume() }
                             }
                         }
                     }
