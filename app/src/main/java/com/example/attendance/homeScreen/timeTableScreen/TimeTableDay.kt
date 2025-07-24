@@ -86,7 +86,6 @@ fun TimeTableDay(
     // scrolling so that current time is in the middle
     LaunchedEffect(boxHeight) {
         val millisSinceStartOfDay = LocalTime.now().toSecondOfDay() * 1000L
-        println("$millisSinceStartOfDay")
         scrollState.scrollTo(with(density) {
             (millisSinceStartOfDay.millisToDp(hourHeight) + (hourHeight - boxHeight) / 2).toPx().toInt()
         })

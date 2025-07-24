@@ -42,6 +42,8 @@ import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.LocalTime
 
 @Serializable
 object TimeTableScreen : Screen
@@ -62,7 +64,7 @@ fun TimeTableScreen(
                 .padding(paddingValues)
         ) {
             val pagerState = rememberPagerState (
-                initialPage = 0,
+                initialPage = LocalDate.now().dayOfWeek.ordinal,
                 pageCount = { 7 }
             )
 
