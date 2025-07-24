@@ -49,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -349,7 +350,7 @@ fun RenameDialog(
     hideDialog: () -> Unit,
 ) {
     var subjectName by remember {
-        mutableStateOf("")
+        mutableStateOf(subject.name)
     }
 
     val renameSubject = {
@@ -398,7 +399,8 @@ fun RenameDialog(
                         Text(text = "Rename")
                     },
                     keyboardOptions = KeyboardOptions.Default.copy(
-                        imeAction = ImeAction.Go
+                        imeAction = ImeAction.Go,
+                        capitalization = KeyboardCapitalization.Sentences
                     ),
                     keyboardActions = KeyboardActions { renameSubject() }
                 )
