@@ -41,8 +41,8 @@ class AttendanceViewModel(
     var _timeTableLocked = MutableStateFlow(true)
     val timeTableLocked = _timeTableLocked
 
-    var timeTableListUpdatedTrigger = MutableStateFlow(ULong.MIN_VALUE)
-    private set
+    var _boundsRecalculationTrigger = MutableStateFlow(ULong.MIN_VALUE)
+    val boundsRecalculationTrigger = _boundsRecalculationTrigger
 
     val slotBounds = mutableStateMapOf<Long, LongRange>()
 
@@ -228,7 +228,7 @@ class AttendanceViewModel(
                 timeTableList.add(databaseRepository.getTimeTableForDay(day).toMutableStateList())
             }
         }
-        timeTableListMutated()
+        triggerBoundsRecalculation()
     }
 
     fun attendanceRatio(subject: SubjectUiModel, month: Month, year: Int): Float {
@@ -370,7 +370,7 @@ class AttendanceViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val generatedId = databaseRepository.insertTimeTable(timeTable)
             timeTableList[timeTable.day].add(timeTable.copy(id = generatedId))
-            timeTableListMutated()
+            triggerBoundsRecalculation()
         }
     }
 
@@ -381,7 +381,7 @@ class AttendanceViewModel(
         timeTableList[timeTable.day].removeIf {
             it.id == timeTable.id
         }
-        timeTableListMutated()
+        triggerBoundsRecalculation()
     }
 
     /**
@@ -413,14 +413,13 @@ class AttendanceViewModel(
         val index = timeTableList[timeTable.day].indexOfFirst { it.id == timeTable.id }
         if (index != -1) {
             timeTableList[timeTable.day][index] = timeTable
-            timeTableListMutated()
         }
     }
 
     fun getSubject(subjectId: Long): SubjectUiModel? = subjectList.find { it.id == subjectId }
 
-    fun timeTableListMutated() {
-        timeTableListUpdatedTrigger.value++
+    fun triggerBoundsRecalculation() {
+        _boundsRecalculationTrigger.value++
     }
 
     fun setSlotBound(slotId: Long, bound: LongRange) {

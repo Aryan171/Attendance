@@ -239,12 +239,12 @@ fun TimeTableGrid(
         val dragHandleSize = 20.dp
         val dragHandleCollisionBoxSize = 50.dp
 
-        val timeTableMutatedTrigger by viewModel.timeTableListUpdatedTrigger.collectAsState()
+        val boundsRecalculationTrigger by viewModel.boundsRecalculationTrigger.collectAsState()
 
         // recalculating the bounds when timeTableList is mutated
-        LaunchedEffect(timeTableMutatedTrigger) {
+        LaunchedEffect(boundsRecalculationTrigger) {
             val slotList = viewModel.timeTableList[day.ordinal]
-
+            println("recalculating the bounds list")
             for (slot1 in slotList) {
                 var minStart = 0L
                 var maxEnd = MILLIS_IN_DAY
@@ -334,7 +334,8 @@ fun SlotDragHandles(
                     modifier = Modifier
                         .draggable(
                             state = startTimeDraggableState,
-                            orientation = Orientation.Vertical
+                            orientation = Orientation.Vertical,
+                            onDragStopped = { viewModel.triggerBoundsRecalculation() }
                         ),
                     collisionBoxSize = dragHandleCollisionBoxSize,
                     dragHandleSize = dragHandleSize
@@ -367,7 +368,8 @@ fun SlotDragHandles(
                         modifier = Modifier
                             .draggable(
                                 state = endTimeDraggableState,
-                                orientation = Orientation.Vertical
+                                orientation = Orientation.Vertical,
+                                onDragStopped = { viewModel.triggerBoundsRecalculation() }
                             ),
                         collisionBoxSize = dragHandleCollisionBoxSize,
                         dragHandleSize = dragHandleSize
@@ -526,7 +528,8 @@ fun TimeTableSlot(
                     )
                     .draggable(
                         state = draggableState,
-                        orientation = Orientation.Vertical
+                        orientation = Orientation.Vertical,
+                        onDragStopped = { viewModel.triggerBoundsRecalculation() }
                     )
                     .background(
                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
