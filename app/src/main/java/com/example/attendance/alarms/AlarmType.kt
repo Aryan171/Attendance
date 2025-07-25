@@ -1,3 +1,4 @@
 package com.example.attendance.alarms
 
-val PERIODIC_ALARM = "attendanceAppPeriodicAlarm"
+const val attendanceApp_periodicAlarm = "attendanceAppPeriodicAlarm"
+const val attendanceApp_notificationAlarm = "attendanceAppAttendanceNotificationAlarm"
