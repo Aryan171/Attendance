@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.room.Room
+import com.example.attendance.alarms.alarmSchedurer.AlarmScheduler
 import com.example.attendance.database.AppDatabase
 import com.example.attendance.database.DatabaseRepository
 import com.example.attendance.homeScreen.HomeScreen
@@ -28,6 +29,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val alarmScheduler = AlarmScheduler(this)
+
+        alarmScheduler.schedulePeriodicAlarm()
 
         db = Room.databaseBuilder(
                 applicationContext,
