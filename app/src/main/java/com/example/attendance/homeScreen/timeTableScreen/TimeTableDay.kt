@@ -131,7 +131,7 @@ fun TimeTableGrid(
 
     var firstA by remember { mutableStateOf(Offset.Unspecified) }
     var firstB by remember { mutableStateOf(Offset.Unspecified) }
-    var firstCentroid by remember { mutableFloatStateOf(0F) }
+    var originalCentroid by remember { mutableFloatStateOf(0F) }
 
     var originalScrollValue by remember { mutableIntStateOf(0) }
     var originalHourHeight = 0.dp
@@ -206,11 +206,13 @@ fun TimeTableGrid(
                                 firstB = pointers[1].position
                                 originalHourHeight = hourHeight
                                 originalScrollValue = scrollState.value
-                                firstCentroid = event.calculateCentroid().y
+                                originalCentroid = event.calculateCentroid().y
                             }
 
                             val a = pointers[0].position
                             val b = pointers[1].position
+
+                            val pan = originalCentroid - originalScrollValue - (event.calculateCentroid().y - scrollState.value)
 
                             val zoom = (a - b).y / (firstA - firstB).y
                             val newHourHeight = (zoom * originalHourHeight).coerceIn(hourHeightRange)
@@ -218,7 +220,7 @@ fun TimeTableGrid(
                             if (effectiveZoom != 1f) {
                                 animationScope.launch {
                                     scrollState.scrollTo(
-                                        originalScrollValue + (firstCentroid * (effectiveZoom - 1F)).toInt()
+                                        originalScrollValue + (pan + originalCentroid * (effectiveZoom - 1F)).toInt()
                                     )
                                 }
                                 // modifying the hourHeight
