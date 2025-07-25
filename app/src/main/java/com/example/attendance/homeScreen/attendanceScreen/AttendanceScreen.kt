@@ -62,6 +62,7 @@ fun AttendanceScreen(
                     }
                 ) { subject->
                     SubjectCard(
+                        modifier = Modifier.animateItem(),
                         subject = subject,
                         viewModel = viewModel,
                         onClick = subjectCardOnClick

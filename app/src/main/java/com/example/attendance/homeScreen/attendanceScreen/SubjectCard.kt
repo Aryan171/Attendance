@@ -66,6 +66,7 @@ import java.time.LocalDate
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SubjectCard(
+    modifier: Modifier = Modifier,
     subject: SubjectUiModel,
     viewModel: AttendanceViewModel,
     onClick: (SubjectUiModel) -> Unit
@@ -94,7 +95,7 @@ fun SubjectCard(
     )
 
     Column (
-        modifier = Modifier
+        modifier = modifier
             .animateContentSize()
             .padding(start = shadowElevation * 2, top = shadowElevation, bottom = shadowElevation, end = shadowElevation * 2)
             .shadow(
