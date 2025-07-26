@@ -19,4 +19,10 @@ interface TimeTableDao {
 
     @Delete
     suspend fun deleteTimeTable(timeTable: TimeTable)
+
+    @Query("SELECT * FROM timeTable")
+    suspend fun getAllTimeTable(): List<TimeTable>
+
+    @Query("SELECT * FROM timeTable WHERE id = :slotId")
+    suspend fun getSlotById(slotId: Long): TimeTable?
 }

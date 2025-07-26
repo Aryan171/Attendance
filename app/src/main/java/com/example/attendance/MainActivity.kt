@@ -27,26 +27,24 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val alarmScheduler = AlarmScheduler(this)
+        db = AppDatabase.getInstance(this)
 
-        alarmScheduler.schedulePeriodicAlarm()
+        val databaseRepository = DatabaseRepository(
+            db.attendanceDao(),
+            db.subjectDao(),
+            db.timetableDao()
+        )
 
-        db = Room.databaseBuilder(
-                applicationContext,
-                AppDatabase::class.java,
-                "appDataBase"
-            ).fallbackToDestructiveMigration(true).build()
+        val alarmScheduler = AlarmScheduler(this, databaseRepository)
+
+        alarmScheduler.scheduleAllAlarms()
 
         setContent {
             val viewModel by viewModels<AttendanceViewModel>{
                 viewModelFactory {
                     initializer {
                         AttendanceViewModel(
-                            DatabaseRepository(
-                                db.attendanceDao(),
-                                db.subjectDao(),
-                                db.timetableDao()
-                            ),
+                            databaseRepository,
                             PreferencesRepository(this@MainActivity)
                         )
                     }

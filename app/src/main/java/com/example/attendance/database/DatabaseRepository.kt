@@ -49,11 +49,15 @@ class DatabaseRepository(
 
     suspend fun insertSubject(subject: Subject): Long = subjectDao.insertSubject(subject)
 
-    suspend fun getTimeTableForDay(day: Int): List<TimeTable> = timeTableDao.getTimeTableForDay(day)
+    suspend fun getSlotsForDay(day: Int): List<TimeTable> = timeTableDao.getTimeTableForDay(day)
 
-    suspend fun insertTimeTable(timeTable: TimeTable): Long = timeTableDao.insertTimeTable(timeTable)
+    suspend fun insertSlot(timeTable: TimeTable): Long = timeTableDao.insertTimeTable(timeTable)
 
-    suspend fun updateTimeTable(timeTable: TimeTable) = timeTableDao.updateTimeTable(timeTable)
+    suspend fun updateSlot(timeTable: TimeTable) = timeTableDao.updateTimeTable(timeTable)
 
-    suspend fun deleteTimeTable(timeTable: TimeTable) = timeTableDao.deleteTimeTable(timeTable)
+    suspend fun deleteSlot(timeTable: TimeTable) = timeTableDao.deleteTimeTable(timeTable)
+
+    suspend fun getAllSlots(): List<TimeTable> = timeTableDao.getAllTimeTable()
+
+    suspend fun getSlotById(slotId: Long): TimeTable? = timeTableDao.getSlotById(slotId)
 }

@@ -5,69 +5,111 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.SystemClock
 import com.example.attendance.alarms.alarmReceiver.AlarmReceiver
 import com.example.attendance.alarms.attendanceApp_notificationAlarm
-import com.example.attendance.alarms.attendanceApp_periodicAlarm
-import com.example.attendance.alarms.pendingIntentRequestCodes.PERIODIC_ALARM_REQUEST_CODE
+import com.example.attendance.database.DatabaseRepository
+import com.example.attendance.database.timeTable.TimeTable
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 
-class AlarmScheduler(private val context: Context) {
+class AlarmScheduler(
+    private val context: Context,
+    private val db: DatabaseRepository) {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
-    fun schedulePeriodicAlarm() {
-        val intent = Intent(context, AlarmReceiver::class.java)
+    fun scheduleAllAlarms() {
+        var slots = listOf<TimeTable>()
+        CoroutineScope(Dispatchers.Main).launch {
+            withContext(Dispatchers.IO) {
+                slots = db.getAllSlots()
+            }
 
-        intent.action = attendanceApp_periodicAlarm
-
-        if (isAlarmScheduled(intent)) {
-            return
+            // scheduling all the alarms for next one week
+            for (slot in slots) {
+                if (slot.subjectId != null) {
+                    scheduleExactRTCAlarm(slot.id)
+                }
+            }
         }
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            PERIODIC_ALARM_REQUEST_CODE,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE
-        )
-
-        alarmManager.setInexactRepeating(
-            AlarmManager.ELAPSED_REALTIME,
-            SystemClock.elapsedRealtime(),
-            AlarmManager.INTERVAL_DAY,
-            pendingIntent
-        )
     }
 
     // suppressing the missing permission because we are using USE_EXACT_ALARM permission
     // which is granted by default
     @SuppressLint("MissingPermission")
-    fun scheduleExactRTCAlarm(subjectId: Long, epochTimeMillis: Long) {
-        val intent = createIntentForExactRTCAlarm(subjectId)
+    fun scheduleExactRTCAlarm(slotId: Long) {
+        CoroutineScope(Dispatchers.Main).launch {
+            var slot: TimeTable?
+            withContext(Dispatchers.IO) {
+                slot = db.getSlotById(slotId)
+            }
+            if (slot == null || slot.subjectId == null || isExactRCTAlarmScheduled(slot)) {
+                return@launch
+            }
 
-        if (isAlarmScheduled(intent)) {
-            return
+            val intent = createIntentForExactRTCAlarm(slot)
+
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                createRequestCodeForExactRCTAlarm(slot.subjectId, slot.startTimeMillis),
+                intent,
+                PendingIntent.FLAG_IMMUTABLE
+            )
+
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                calculateAlarmTriggerTimeMillis(slot),
+                pendingIntent
+            )
         }
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            subjectId.toInt(),
-            intent,
-            PendingIntent.FLAG_IMMUTABLE
-        )
-
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            epochTimeMillis,
-            pendingIntent
-        )
     }
 
-    fun cancelExactRTCAlarm(subjectId: Long) {
-        val intent = createIntentForExactRTCAlarm(subjectId)
+    /**
+     * Calculates the trigger time in milliseconds for an alarm based on a given time slot.
+     *
+     * The function determines the next occurrence of the slot's day of the week.
+     * If the current day is the same as the slot's day and the current time is past the slot's start time,
+     * it schedules the alarm for the same day next week.
+     * Otherwise, it calculates the number of days until the next occurrence of the slot's day.
+     *
+     * @param slot The [TimeTable] object representing the time slot for which to calculate the alarm trigger time.
+     *             It must contain the day of the week (`slot.day`) and the start time in milliseconds since midnight (`slot.startTimeMillis`).
+     * @return The trigger time in milliseconds since the Unix epoch.
+     */
+    fun calculateAlarmTriggerTimeMillis(slot: TimeTable): Long {
+        val date = LocalDate.now()
+
+        val daysToAdd = if (date.dayOfWeek.ordinal == slot.day && LocalTime.now().toNanoOfDay() / 1000000L > slot.startTimeMillis) {
+            7L
+        } else {
+            date.dayOfWeek.ordinal.daysTo(slot.day).toLong()
+        }
+
+        val startOfDayMillis = date.plusDays(daysToAdd)
+            .atStartOfDay(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
+
+        return startOfDayMillis + slot.startTimeMillis
+    }
+
+    fun Int.daysTo(other: Int): Int {
+        return (other - this + 7) % 7
+    }
+
+    fun cancelExactRTCAlarm(slot: TimeTable) {
+        if (slot.subjectId == null) {
+            return
+        }
+        val intent = createIntentForExactRTCAlarm(slot)
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            subjectId.toInt(),
+            createRequestCodeForExactRCTAlarm(slot.subjectId, slot.startTimeMillis),
             intent,
             PendingIntent.FLAG_IMMUTABLE
         )
@@ -75,20 +117,28 @@ class AlarmScheduler(private val context: Context) {
         alarmManager.cancel(pendingIntent)
     }
 
-    fun createIntentForExactRTCAlarm(subjectId: Long): Intent {
+    fun createRequestCodeForExactRCTAlarm(subjectId: Long, epochTimeMillis: Long): Int {
+        return (((subjectId + epochTimeMillis) % (Int.MAX_VALUE * 2L)) - Int.MAX_VALUE).toInt()
+    }
+
+    fun createIntentForExactRTCAlarm(slot: TimeTable): Intent {
         val intent = Intent(context, AlarmReceiver::class.java)
         intent.action = attendanceApp_notificationAlarm
-        intent.putExtra("subjectId", subjectId)
-
+        intent.putExtra("slotId", slot.id)
         return intent
     }
 
-    fun isAlarmScheduled(intent: Intent): Boolean {
+    fun isExactRCTAlarmScheduled(slot: TimeTable): Boolean {
+        if (slot.subjectId == null) {
+            return true
+        }
+        val intent = createIntentForExactRTCAlarm(slot)
+
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            PERIODIC_ALARM_REQUEST_CODE,
+            createRequestCodeForExactRCTAlarm(slot.subjectId, slot.startTimeMillis),
             intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_NO_CREATE
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
         )
 
         return pendingIntent != null

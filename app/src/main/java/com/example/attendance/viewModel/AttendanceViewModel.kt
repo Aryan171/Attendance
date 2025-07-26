@@ -225,7 +225,7 @@ class AttendanceViewModel(
     fun loadTimeTableList() {
         viewModelScope.launch(Dispatchers.IO) {
             for (day in 0..6) {
-                timeTableList.add(databaseRepository.getTimeTableForDay(day).toMutableStateList())
+                timeTableList.add(databaseRepository.getSlotsForDay(day).toMutableStateList())
             }
         }
         triggerBoundsRecalculation()
@@ -368,7 +368,7 @@ class AttendanceViewModel(
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            val generatedId = databaseRepository.insertTimeTable(timeTable)
+            val generatedId = databaseRepository.insertSlot(timeTable)
             timeTableList[timeTable.day].add(timeTable.copy(id = generatedId))
             triggerBoundsRecalculation()
         }
@@ -376,7 +376,7 @@ class AttendanceViewModel(
 
     fun deleteTimeTable(timeTable: TimeTable) {
         viewModelScope.launch {
-            databaseRepository.deleteTimeTable(timeTable)
+            databaseRepository.deleteSlot(timeTable)
         }
         timeTableList[timeTable.day].removeIf {
             it.id == timeTable.id
@@ -407,7 +407,7 @@ class AttendanceViewModel(
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            databaseRepository.updateTimeTable(timeTable)
+            databaseRepository.updateSlot(timeTable)
         }
 
         val index = timeTableList[timeTable.day].indexOfFirst { it.id == timeTable.id }
