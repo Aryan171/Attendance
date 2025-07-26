@@ -1,12 +1,11 @@
 package com.example.attendance.alarms.alarmSchedurer
 
-import android.Manifest
+import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
-import androidx.annotation.RequiresPermission
 import com.example.attendance.alarms.alarmReceiver.AlarmReceiver
 import com.example.attendance.alarms.attendanceApp_notificationAlarm
 import com.example.attendance.alarms.attendanceApp_periodicAlarm
@@ -18,7 +17,7 @@ class AlarmScheduler(private val context: Context) {
     fun schedulePeriodicAlarm() {
         val intent = Intent(context, AlarmReceiver::class.java)
 
-        intent.putExtra("alarmType", attendanceApp_periodicAlarm)
+        intent.action = attendanceApp_periodicAlarm
 
         if (isAlarmScheduled(intent)) {
             return
@@ -34,12 +33,14 @@ class AlarmScheduler(private val context: Context) {
         alarmManager.setInexactRepeating(
             AlarmManager.ELAPSED_REALTIME,
             SystemClock.elapsedRealtime(),
-            AlarmManager.INTERVAL_DAY * 2,
+            AlarmManager.INTERVAL_DAY,
             pendingIntent
         )
     }
 
-    @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
+    // suppressing the missing permission because we are using USE_EXACT_ALARM permission
+    // which is granted by default
+    @SuppressLint("MissingPermission")
     fun scheduleExactRTCAlarm(subjectId: Long, epochTimeMillis: Long) {
         val intent = createIntentForExactRTCAlarm(subjectId)
 
@@ -76,7 +77,7 @@ class AlarmScheduler(private val context: Context) {
 
     fun createIntentForExactRTCAlarm(subjectId: Long): Intent {
         val intent = Intent(context, AlarmReceiver::class.java)
-        intent.putExtra("alarmType", attendanceApp_notificationAlarm)
+        intent.action = attendanceApp_notificationAlarm
         intent.putExtra("subjectId", subjectId)
 
         return intent

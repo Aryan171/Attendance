@@ -9,18 +9,13 @@ import com.example.attendance.alarms.attendanceApp_periodicAlarm
 
 class AlarmReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
-        Log.i("AlarmReceiver", "Alarm received")
-        val alarmType = intent?.getStringExtra("alarmType") ?: ""
-
-        Log.i("AlarmReceiver", "Alarm type: \"$alarmType\"")
-
-        when (alarmType) {
+        when (intent?.action) {
              attendanceApp_periodicAlarm -> {
-                println("periodic alarm triggered")
+                Log.i("AlarmReceiver", "periodic alarm triggered")
             }
 
             attendanceApp_notificationAlarm -> {
-                println("notification alarm triggered for ${intent?.getStringExtra("subject")}")
+                Log.i("AlarmReceiver", "notification alarm triggered")
             }
         }
     }

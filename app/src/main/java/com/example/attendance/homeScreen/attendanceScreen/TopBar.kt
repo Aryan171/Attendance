@@ -294,9 +294,15 @@ fun ChangeMinimumAttendanceDialog(
     }
 
     fun setMinimumAttendance() {
-        val minimumRequiredAttendanceRatio = minimumAttendance.toFloat() / 100f
+        var minimumRequiredAttendanceRatio: Float
+        try {
+            minimumRequiredAttendanceRatio = minimumAttendance.toFloat() / 100F
+        } catch (_: Exception) {
+            minimumAttendance = ""
+            return
+        }
 
-        if (minimumRequiredAttendanceRatio !in 0f..1f) {
+        if (minimumRequiredAttendanceRatio !in 0F..1F) {
             minimumAttendance = ""
         } else {
             viewModel.setMinimumRequiredAttendanceRatio(minimumRequiredAttendanceRatio)
