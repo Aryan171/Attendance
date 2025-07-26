@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.attendance.alarms.alarmSchedurer.AlarmScheduler
 import com.example.attendance.database.DatabaseRepository
 import com.example.attendance.database.subject.Subject
 import com.example.attendance.database.subject.SubjectUiModel
@@ -28,6 +29,7 @@ import kotlin.math.ceil
 import kotlin.math.floor
 
 class AttendanceViewModel(
+    private val alarmScheduler: AlarmScheduler,
     private val databaseRepository: DatabaseRepository,
     private val preferencesRepository: PreferencesRepository
 ): ViewModel() {
@@ -362,24 +364,34 @@ class AttendanceViewModel(
         )
     }
 
-    fun addTimeTable(timeTable: TimeTable) {
-        if (timeTable.day !in 0..6) {
+    fun addSlot(slot: TimeTable) {
+        if (slot.day !in 0..6) {
             throw IndexOutOfBoundsException("Day must be between 0 and 6")
         }
 
-        viewModelScope.launch(Dispatchers.IO) {
-            val generatedId = databaseRepository.insertSlot(timeTable)
-            timeTableList[timeTable.day].add(timeTable.copy(id = generatedId))
+        viewModelScope.launch(Dispatchers.Main) {
+            val generatedId: Long
+            withContext(Dispatchers.IO) {
+                generatedId = databaseRepository.insertSlot(slot)
+            }
+            timeTableList[slot.day].add(slot.copy(id = generatedId))
+
+            // scheduling the alarm
+            alarmScheduler.scheduleExactRTCAlarm(generatedId)
+
             triggerBoundsRecalculation()
         }
     }
 
-    fun deleteTimeTable(timeTable: TimeTable) {
+    fun deleteSlot(slot: TimeTable) {
+        // removing the alarm
+        alarmScheduler.cancelExactRTCAlarm(slot)
+
         viewModelScope.launch {
-            databaseRepository.deleteSlot(timeTable)
+            databaseRepository.deleteSlot(slot)
         }
-        timeTableList[timeTable.day].removeIf {
-            it.id == timeTable.id
+        timeTableList[slot.day].removeIf {
+            it.id == slot.id
         }
         triggerBoundsRecalculation()
     }
@@ -432,5 +444,40 @@ class AttendanceViewModel(
 
     fun unlockTimeTable() {
         _timeTableLocked.value = false
+    }
+
+    /**
+     * Schedules an exact RTC (Real-Time Clock) alarm for the given timetable slot.
+     *
+     * The `slot.id` is used to uniquely identify the alarm, allowing it to be potentially
+     * managed (e.g., canceled) later.
+     *
+     * @param slot The [TimeTable] object representing the slot for which to schedule the alarm.
+     *             It must contain a unique `id` for alarm identification.
+     */
+    fun scheduleAlarm(slot: TimeTable) {
+        if (slot.subjectId != null) {
+            alarmScheduler.scheduleExactRTCAlarm(slot.id)
+        }
+    }
+
+    /**
+     * Reschedules an exact RTC (Real-Time Clock) alarm for a given timetable slot.
+     *
+     * This function first cancels any existing alarm associated with the `slot`.
+     * This ensures that only one alarm is active for this particular slot.
+     *
+     * Then, it schedules a new exact RTC alarm for the `slot`. The `slot.id` is used to
+     * uniquely identify the alarm.
+     *
+     * This is useful when the details of a timetable slot (e.g., time) have changed,
+     * and the corresponding alarm needs to be updated.
+     *
+     * @param slot The [TimeTable] object representing the slot for which to reschedule the alarm.
+     *             It must contain a unique `id` for alarm identification.
+     */
+    fun rescheduleAlarm(slot: TimeTable) {
+        alarmScheduler.cancelExactRTCAlarm(slot)
+        alarmScheduler.scheduleExactRTCAlarm(slot.id)
     }
 }

@@ -9,7 +9,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import androidx.room.Room
 import com.example.attendance.alarms.alarmSchedurer.AlarmScheduler
 import com.example.attendance.database.AppDatabase
 import com.example.attendance.database.DatabaseRepository
@@ -44,6 +43,7 @@ class MainActivity : ComponentActivity() {
                 viewModelFactory {
                     initializer {
                         AttendanceViewModel(
+                            alarmScheduler,
                             databaseRepository,
                             PreferencesRepository(this@MainActivity)
                         )

@@ -189,7 +189,7 @@ fun TimeTableGrid(
                                             endTimeMillis = endTime.coerceIn(bounds),
                                         )
 
-                                        viewModel.addTimeTable(slot)
+                                        viewModel.addSlot(slot)
                                     }
                                 } catch (_: Exception) {}
                             }
@@ -246,7 +246,6 @@ fun TimeTableGrid(
         // recalculating the bounds when timeTableList is mutated
         LaunchedEffect(boundsRecalculationTrigger) {
             val slotList = viewModel.timeTableList[day.ordinal]
-            println("recalculating the bounds list")
             for (slot1 in slotList) {
                 var minStart = 0L
                 var maxEnd = MILLIS_IN_DAY
@@ -337,7 +336,12 @@ fun SlotDragHandles(
                         .draggable(
                             state = startTimeDraggableState,
                             orientation = Orientation.Vertical,
-                            onDragStopped = { viewModel.triggerBoundsRecalculation() }
+                            onDragStopped = {
+                                viewModel.triggerBoundsRecalculation()
+                                if (!timeTableLocked) {
+                                    viewModel.rescheduleAlarm(slot)
+                                }
+                            }
                         ),
                     collisionBoxSize = dragHandleCollisionBoxSize,
                     dragHandleSize = dragHandleSize
@@ -469,7 +473,7 @@ fun TimeTableSlot(
     if (showDeleteDialog) {
         SlotDeleteDialog (
             delete = {
-                viewModel.deleteTimeTable(slot)
+                viewModel.deleteSlot(slot)
             },
             hideDialog = {
                 showDeleteDialog = false
@@ -531,7 +535,12 @@ fun TimeTableSlot(
                     .draggable(
                         state = draggableState,
                         orientation = Orientation.Vertical,
-                        onDragStopped = { viewModel.triggerBoundsRecalculation() }
+                        onDragStopped = {
+                            viewModel.triggerBoundsRecalculation()
+                            if (!timeTableLocked) {
+                                viewModel.rescheduleAlarm(slot)
+                            }
+                        }
                     )
                     .background(
                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
@@ -650,6 +659,7 @@ fun SubjectSelectorDropDown (
                 text = { Text(subject.name) },
                 onClick = {
                     viewModel.updateTimeTable(slot.copy(subjectId = subject.id))
+                    viewModel.scheduleAlarm(slot)
                     hideDropdownMenu()
                 }
             )

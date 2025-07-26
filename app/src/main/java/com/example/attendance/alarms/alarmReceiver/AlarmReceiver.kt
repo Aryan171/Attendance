@@ -29,8 +29,8 @@ class AlarmReceiver: BroadcastReceiver() {
                 if (slotId == -1L) {
                     return
                 }
+                println("slotId = ${slotId} and alarm has been triggered")
                 alarmScheduler.scheduleExactRTCAlarm(slotId)
-
             }
         }
     }

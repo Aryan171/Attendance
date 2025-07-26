@@ -42,12 +42,10 @@ class AlarmScheduler(
     // which is granted by default
     @SuppressLint("MissingPermission")
     fun scheduleExactRTCAlarm(slotId: Long) {
-        CoroutineScope(Dispatchers.Main).launch {
-            var slot: TimeTable?
-            withContext(Dispatchers.IO) {
-                slot = db.getSlotById(slotId)
-            }
-            if (slot == null || slot.subjectId == null || isExactRCTAlarmScheduled(slot)) {
+        CoroutineScope(Dispatchers.IO).launch {
+            var slot = db.getSlotById(slotId) ?: return@launch
+
+            if (slot.subjectId == null) {
                 return@launch
             }
 
@@ -55,7 +53,7 @@ class AlarmScheduler(
 
             val pendingIntent = PendingIntent.getBroadcast(
                 context,
-                createRequestCodeForExactRCTAlarm(slot.subjectId, slot.startTimeMillis),
+                createRequestCodeForExactRCTAlarm(slot),
                 intent,
                 PendingIntent.FLAG_IMMUTABLE
             )
@@ -109,7 +107,7 @@ class AlarmScheduler(
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            createRequestCodeForExactRCTAlarm(slot.subjectId, slot.startTimeMillis),
+            createRequestCodeForExactRCTAlarm(slot),
             intent,
             PendingIntent.FLAG_IMMUTABLE
         )
@@ -117,30 +115,12 @@ class AlarmScheduler(
         alarmManager.cancel(pendingIntent)
     }
 
-    fun createRequestCodeForExactRCTAlarm(subjectId: Long, epochTimeMillis: Long): Int {
-        return (((subjectId + epochTimeMillis) % (Int.MAX_VALUE * 2L)) - Int.MAX_VALUE).toInt()
-    }
+    fun createRequestCodeForExactRCTAlarm(slot: TimeTable): Int = slot.id.hashCode()
 
     fun createIntentForExactRTCAlarm(slot: TimeTable): Intent {
         val intent = Intent(context, AlarmReceiver::class.java)
         intent.action = attendanceApp_notificationAlarm
         intent.putExtra("slotId", slot.id)
         return intent
-    }
-
-    fun isExactRCTAlarmScheduled(slot: TimeTable): Boolean {
-        if (slot.subjectId == null) {
-            return true
-        }
-        val intent = createIntentForExactRTCAlarm(slot)
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            createRequestCodeForExactRCTAlarm(slot.subjectId, slot.startTimeMillis),
-            intent,
-            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        return pendingIntent != null
     }
 }
