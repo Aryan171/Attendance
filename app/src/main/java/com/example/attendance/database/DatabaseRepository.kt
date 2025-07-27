@@ -49,6 +49,8 @@ class DatabaseRepository(
 
     suspend fun insertSubject(subject: Subject): Long = subjectDao.insertSubject(subject)
 
+    suspend fun getSubjectById(subjectId: Long): Subject? = subjectDao.getSubjectById(subjectId)
+
     suspend fun getSlotsForDay(day: Int): List<TimeTable> = timeTableDao.getTimeTableForDay(day)
 
     suspend fun insertSlot(timeTable: TimeTable): Long = timeTableDao.insertTimeTable(timeTable)

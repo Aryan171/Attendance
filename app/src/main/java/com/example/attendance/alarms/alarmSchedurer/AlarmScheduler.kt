@@ -5,7 +5,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import com.example.attendance.alarms.alarmReceiver.AlarmReceiver
+import com.example.attendance.alarms.broadcastReceiver.AttendanceBroadcastReceiver
 import com.example.attendance.alarms.attendanceApp_notificationAlarm
 import com.example.attendance.database.DatabaseRepository
 import com.example.attendance.database.timeTable.TimeTable
@@ -43,20 +43,13 @@ class AlarmScheduler(
     @SuppressLint("MissingPermission")
     fun scheduleExactRTCAlarm(slotId: Long) {
         CoroutineScope(Dispatchers.IO).launch {
-            var slot = db.getSlotById(slotId) ?: return@launch
+            val slot = db.getSlotById(slotId) ?: return@launch
 
             if (slot.subjectId == null) {
                 return@launch
             }
 
-            val intent = createIntentForExactRTCAlarm(slot)
-
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                createRequestCodeForExactRCTAlarm(slot),
-                intent,
-                PendingIntent.FLAG_IMMUTABLE
-            )
+            val pendingIntent = createPendingIntentForExactRTCAlarm(slot)
 
             alarmManager.setExactAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
@@ -103,24 +96,24 @@ class AlarmScheduler(
         if (slot.subjectId == null) {
             return
         }
-        val intent = createIntentForExactRTCAlarm(slot)
 
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            createRequestCodeForExactRCTAlarm(slot),
-            intent,
-            PendingIntent.FLAG_IMMUTABLE
-        )
+        val pendingIntent = createPendingIntentForExactRTCAlarm(slot)
 
         alarmManager.cancel(pendingIntent)
     }
 
-    fun createRequestCodeForExactRCTAlarm(slot: TimeTable): Int = slot.id.hashCode()
-
-    fun createIntentForExactRTCAlarm(slot: TimeTable): Intent {
-        val intent = Intent(context, AlarmReceiver::class.java)
+    fun createPendingIntentForExactRTCAlarm(slot: TimeTable): PendingIntent {
+        val intent = Intent(context, AttendanceBroadcastReceiver::class.java)
         intent.action = attendanceApp_notificationAlarm
         intent.putExtra("slotId", slot.id)
-        return intent
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            slot.id.hashCode(),
+            intent,
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
+        return pendingIntent
     }
 }

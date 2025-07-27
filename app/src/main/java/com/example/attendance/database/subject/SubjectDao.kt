@@ -18,4 +18,7 @@ interface SubjectDao {
 
     @Query("SELECT * FROM subject")
     suspend fun getAllSubjects() : List<Subject>
+
+    @Query("SELECT * FROM subject WHERE id = :subjectId")
+    suspend fun getSubjectById(subjectId: Long): Subject?
 }
