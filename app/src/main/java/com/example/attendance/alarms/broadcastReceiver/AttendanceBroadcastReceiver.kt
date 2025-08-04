@@ -38,11 +38,10 @@ class AttendanceBroadcastReceiver: BroadcastReceiver() {
                 if (slotId == -1L) {
                     return
                 }
-
-                alarmScheduler.scheduleExactRTCAlarm(slotId)
-
                 val notification = Notification(context.applicationContext, databaseRepository)
                 notification.showNotification(slotId)
+
+                alarmScheduler.scheduleExactRTCAlarm(slotId)
             }
 
             attendanceApp_markPresent -> {
@@ -51,6 +50,8 @@ class AttendanceBroadcastReceiver: BroadcastReceiver() {
                 if (slotId == -1L || notificationId == -1) {
                     return
                 }
+
+                cancelNotification(notificationId, context)
 
                 CoroutineScope(Dispatchers.Main).launch {
                     val slot = withContext(Dispatchers.IO) {
@@ -64,8 +65,6 @@ class AttendanceBroadcastReceiver: BroadcastReceiver() {
                     withContext(Dispatchers.IO) {
                         databaseRepository.markPresent(slot.subjectId, getLocalDate(slot.day))
                     }
-
-                    cancelNotification(notificationId, context)
                 }
             }
 
@@ -75,6 +74,8 @@ class AttendanceBroadcastReceiver: BroadcastReceiver() {
                 if (slotId == -1L || notificationId == -1) {
                     return
                 }
+
+                cancelNotification(notificationId, context)
 
                 CoroutineScope(Dispatchers.Main).launch {
                     val slot = withContext(Dispatchers.IO) {
@@ -88,8 +89,6 @@ class AttendanceBroadcastReceiver: BroadcastReceiver() {
                     withContext(Dispatchers.IO) {
                         databaseRepository.markAbsent(slot.subjectId, getLocalDate(slot.day))
                     }
-
-                    cancelNotification(notificationId, context)
                 }
             }
         }

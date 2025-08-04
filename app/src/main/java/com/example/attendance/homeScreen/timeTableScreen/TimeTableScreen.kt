@@ -95,7 +95,11 @@ fun TimeTableScreen(
                 }
             }
 
-            if (!AlarmScheduler.canShowExactNotification(viewModel.context)) {
+            var showNotificationPrompt by rememberSaveable { mutableStateOf(
+                !AlarmScheduler.canShowExactNotification(viewModel.context)
+            ) }
+
+            if (showNotificationPrompt) {
                 Row(
                     modifier = Modifier
                         .padding(top = 5.dp)
@@ -107,6 +111,7 @@ fun TimeTableScreen(
                         .clip(MaterialTheme.shapes.medium)
                         .clickable {
                             AlarmScheduler.openNotificationSettings(viewModel.context)
+                            showNotificationPrompt = false
                         }
                         .padding(10.dp),
                     horizontalArrangement = Arrangement.Center
