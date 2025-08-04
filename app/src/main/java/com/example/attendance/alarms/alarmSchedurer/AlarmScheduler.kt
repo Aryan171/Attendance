@@ -1,10 +1,14 @@
 package com.example.attendance.alarms.alarmSchedurer
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.provider.Settings
+import androidx.core.content.ContextCompat
 import com.example.attendance.alarms.broadcastReceiver.AttendanceBroadcastReceiver
 import com.example.attendance.alarms.attendanceApp_notificationAlarm
 import com.example.attendance.database.DatabaseRepository
@@ -31,9 +35,7 @@ class AlarmScheduler(
 
             // scheduling all the alarms for next one week
             for (slot in slots) {
-                if (slot.subjectId != null) {
-                    scheduleExactRTCAlarm(slot.id)
-                }
+                scheduleExactRTCAlarm(slot.id)
             }
         }
     }
@@ -115,5 +117,20 @@ class AlarmScheduler(
         )
 
         return pendingIntent
+    }
+
+    companion object {
+        fun canShowExactNotification(context: Context): Boolean =
+        ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+
+        fun openNotificationSettings(context: Context) {
+            val intent = Intent()
+            intent.action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+            intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            context.startActivity(intent)
+        }
     }
 }

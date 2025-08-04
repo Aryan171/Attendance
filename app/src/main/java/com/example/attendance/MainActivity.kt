@@ -45,7 +45,8 @@ class MainActivity : ComponentActivity() {
                         AttendanceViewModel(
                             alarmScheduler,
                             databaseRepository,
-                            PreferencesRepository(this@MainActivity)
+                            PreferencesRepository(this@MainActivity),
+                            this@MainActivity
                         )
                     }
                 }

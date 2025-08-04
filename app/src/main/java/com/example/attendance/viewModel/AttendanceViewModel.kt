@@ -1,5 +1,6 @@
 package com.example.attendance.viewModel
 
+import android.content.Context
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -31,7 +32,8 @@ import kotlin.math.floor
 class AttendanceViewModel(
     private val alarmScheduler: AlarmScheduler,
     private val databaseRepository: DatabaseRepository,
-    private val preferencesRepository: PreferencesRepository
+    private val preferencesRepository: PreferencesRepository,
+    val context: Context
 ): ViewModel() {
 
     // subjectList is declared and initialized before init block because it is being used in init

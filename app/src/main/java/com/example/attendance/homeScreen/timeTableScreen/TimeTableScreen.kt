@@ -6,6 +6,7 @@ import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -37,6 +38,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
+import com.example.attendance.alarms.alarmSchedurer.AlarmScheduler
 import com.example.attendance.homeScreen.Screen
 import com.example.attendance.viewModel.AttendanceViewModel
 import kotlinx.coroutines.launch
@@ -93,6 +95,26 @@ fun TimeTableScreen(
                 }
             }
 
+            if (!AlarmScheduler.canShowExactNotification(viewModel.context)) {
+                Row(
+                    modifier = Modifier
+                        .padding(top = 5.dp)
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.tertiaryContainer,
+                            shape = MaterialTheme.shapes.medium
+                        )
+                        .clip(MaterialTheme.shapes.medium)
+                        .clickable {
+                            AlarmScheduler.openNotificationSettings(viewModel.context)
+                        }
+                        .padding(10.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text("Click here to grant notification permission")
+                }
+            }
+
             HorizontalPager(
                 state = pagerState
             ) { pageNumber ->
@@ -143,7 +165,7 @@ fun WeekDaySelector(
             .fillMaxWidth()
             .padding(horizontal = 5.dp)
             .onGloballyPositioned {
-                with (density) {
+                with(density) {
                     width = it.size.width.toDp()
                 }
             },
