@@ -18,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -57,7 +58,7 @@ class AlarmScheduler(
             // scheduling the alarm 15 minutes before the class
             alarmManager.setExactAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
-                calculateAlarmTriggerTimeMillis(slot) - AlarmManager.INTERVAL_FIFTEEN_MINUTES,
+                calculateAlarmTriggerTimeMillis(slot),
                 pendingIntent
             )
         }
@@ -76,12 +77,20 @@ class AlarmScheduler(
      * @return The trigger time in milliseconds since the Unix epoch.
      */
     fun calculateAlarmTriggerTimeMillis(slot: TimeTable): Long {
+        var startTimeMillis = slot.startTimeMillis - AlarmManager.INTERVAL_FIFTEEN_MINUTES
+        var slotDay = slot.day
+
+        if (startTimeMillis < 0L) {
+            startTimeMillis = AlarmManager.INTERVAL_DAY + startTimeMillis
+            slotDay = DayOfWeek.of(slotDay - 1).minus(1).ordinal
+        }
+
         val date = LocalDate.now()
 
-        val daysToAdd = if (date.dayOfWeek.ordinal == slot.day && LocalTime.now().toNanoOfDay() / 1000000L > slot.startTimeMillis) {
+        val daysToAdd = if (date.dayOfWeek.ordinal == slotDay && LocalTime.now().toNanoOfDay() / 1000000L >= startTimeMillis) {
             7L
         } else {
-            date.dayOfWeek.ordinal.daysTo(slot.day).toLong()
+            date.dayOfWeek.ordinal.daysTo(slotDay).toLong()
         }
 
         val startOfDayMillis = date.plusDays(daysToAdd)
@@ -89,7 +98,7 @@ class AlarmScheduler(
             .toInstant()
             .toEpochMilli()
 
-        return startOfDayMillis + slot.startTimeMillis
+        return startOfDayMillis + startTimeMillis
     }
 
     fun Int.daysTo(other: Int): Int {
