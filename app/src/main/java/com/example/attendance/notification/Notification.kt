@@ -105,7 +105,7 @@ class Notification(
         val intent = Intent(context, AttendanceBroadcastReceiver::class.java)
             .setAction(attendanceApp_markAbsent)
             .putExtra("slotId", slot.id)
-            .putExtra("notificationIdId", notificationId(slot))
+            .putExtra("notificationId", notificationId(slot))
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
