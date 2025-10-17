@@ -1,22 +1,27 @@
 # Attendance Tracking app
 
-An android app made to help you keep track of your attendance
+A native Android attendance management app built with Kotlin and Jetpack Compose to help you stay on top of your academic requirements.
 
 
 ## Features
 
-- fast and responsive ui made using jetpack compose
-- showing the number of absents and presents required so that you never go below the minimum required attendance
-- data persistence using room persistance library for fast access of data from storage
-- multiple themes to choose from to keep the ui experience fresh
-- ability to sort the subjects based on multiple different parameters like attendance ratio, number of present days, number of absent days etc.
-- absent and present can be marked from the homescreen itself so that attendance can be marked efficiently and the app integrates seamlessly into your daily routine
-- attendance can be seen on a monthly basis
+- Minimum Attendance Criteria: Instantly calculate how many classes you can afford to miss or how many you must attend to meet your minimum percentage goal. Stay ahead of your attendance requirements with ease.
+- Daily Tracking: A simple and intuitive interface to mark yourself 'Present' or 'Absent' for each subject every day. Keep a clear, running record of your attendance history.
+- Smart Timetable & Notifications:
+- Custom Timetable: Add your complete class schedule.
+- Reminders: Receive timely notifications before each class so you never miss one.
+- Flexible Slots: The timetable view is fully customizable. You can scale, shift, and adjust the time slots to perfectly match your unique schedule.
+
+## Tech Stack
+- Language: Kotlin
+- UI Toolkit: Jetpack Compose
+- Platform: Native Android
 
 ## Screenshots
 <p>
   <img src="https://drive.google.com/uc?export=download&id=14yz4fxFI2T_O2OhQsu5gsK4zLw8EIHPC" width="200"/>
   <img src="https://drive.google.com/uc?export=download&id=15MwWIulzf7UAlSJluCgAZG6zwGKcAIUh" width="200" style="margin: 0 10px;"/>
   <img src="https://drive.google.com/uc?export=download&id=15I698z4SRpZaME0uMq3qEeuHp_ImSEci" width="200"/>
+  <img src="https://drive.google.com/uc?export=download&id=1uqpIXP5x0D-4PmTBpzulh__jLZ7nTB8X" width="200"/>
 </p>
 
